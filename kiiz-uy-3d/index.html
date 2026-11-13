@@ -56,6 +56,22 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font-body); f
 .tag:hover, .tag:focus-visible { border-color: var(--accent); outline: none; }
 .tag.on { background: var(--accent); color: #fff; border-color: var(--accent); }
 .tag.sensor { background: #14231a; color: #8ff0a8; border-color: #2c4a36; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.seasonbar { position: absolute; top: 12px; left: max(12px, env(safe-area-inset-left, 0px)); display: flex; gap: 4px; flex-wrap: wrap;
+  background: color-mix(in srgb, var(--panel) 85%, transparent); padding: 4px; border-radius: 10px; border: 1px solid var(--line); }
+.seasonbar button { font: 600 13px/1 var(--font-body); color: var(--fg); background: transparent; border: 0; padding: 8px 10px; border-radius: 7px; cursor: pointer; }
+.seasonbar button[aria-pressed="true"] { background: var(--fg); color: var(--panel); }
+.seasonbar button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.seasons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.season { all: unset; box-sizing: border-box; cursor: pointer; padding: 12px; border-radius: 10px; border: 1px solid var(--line); display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.season:hover { background: var(--chip); }
+.season:focus-visible { outline: 2px solid var(--accent); }
+.season[aria-pressed="true"] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.season .nm { font-family: var(--font-display); font-weight: 700; font-size: 15px; }
+.season .pas { font-size: 12px; font-weight: 600; color: var(--wood); text-transform: uppercase; letter-spacing: .05em; }
+.season .mo { font-size: 12px; color: var(--muted); }
+.season .tt { font-family: var(--font-mono); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.seasonInfo { margin-top: 12px; padding: 12px; border-radius: 10px; background: var(--chip); font-size: 14px; }
+.seasonInfo p { margin: 4px 0 0; }
 .viewbar { position: absolute; left: max(12px, env(safe-area-inset-left, 0px)); bottom: 12px; display: flex; gap: 6px; flex-wrap: wrap; }
 .hint { position: absolute; right: max(12px, env(safe-area-inset-right, 0px)); bottom: 14px; font-size: 12px; color: var(--fg);
   background: color-mix(in srgb, var(--panel) 80%, transparent); padding: 4px 8px; border-radius: 6px; }
@@ -71,6 +87,7 @@ h2 { font-family: var(--font-display); font-weight: 500; font-size: 12.5px; text
   margin: 0 0 10px; color: var(--muted); }
 h3 { font-size: 15px; margin: 0 0 6px; }
 section { display: flex; flex-direction: column; }
+.pane[hidden] { display: none; }
 .ctl { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
 .ctl label, .ctl .lbl { font-weight: 500; display: flex; justify-content: space-between; gap: 8px; }
 .ctl output { font-variant-numeric: tabular-nums; color: var(--accent); font-weight: 600; }
@@ -90,8 +107,8 @@ details.settings { border: 1px solid var(--line); border-radius: 10px; padding: 
 details.settings summary { cursor: pointer; font-weight: 600; }
 details.settings[open] summary { margin-bottom: 12px; }
 
-.tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
-.tabs button { all: unset; cursor: pointer; padding: 9px 10px; font-weight: 600; font-size: 13.5px; color: var(--muted);
+.tabs { display: flex; flex-wrap: wrap; gap: 2px 0; border-bottom: 1px solid var(--line); }
+.tabs button { all: unset; cursor: pointer; padding: 9px 8px; font-weight: 600; font-size: 13.5px; color: var(--muted);
   border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; }
 .tabs button[aria-selected="true"] { color: var(--fg); border-color: var(--accent); }
 
@@ -159,6 +176,7 @@ pre.code .c { color: var(--muted); }
     padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
   .hint { display: none; }
 }
+@media (max-width: 420px) { .seasons { grid-template-columns: 1fr; } }
 @media (max-width: 400px) { .readout b { font-size: 17px; } .timeline li { grid-template-columns: 74px 1fr; } }
 </style>
 </head>
@@ -167,6 +185,9 @@ pre.code .c { color: var(--muted); }
 <div class="app">
   <div class="view" id="view">
     <div class="labels" id="labels"></div>
+    <div class="seasonbar" id="seasonBar" role="group" aria-label="Жыл мезгілі">
+      <button data-s="qys" aria-pressed="true">Қыс</button><button data-s="koktem">Көктем</button><button data-s="zhaz">Жаз</button><button data-s="kuz">Күз</button>
+    </div>
     <div class="viewbar">
       <button class="btn" id="vOut">Сырттан</button>
       <button class="btn" id="vIn">Ішінен</button>
@@ -208,6 +229,7 @@ pre.code .c { color: var(--muted); }
 
     <nav class="tabs" role="tablist" aria-label="Жоба бөлімдері">
       <button role="tab" data-tab="sensor" aria-selected="true">Датчик</button>
+      <button role="tab" data-tab="seasons" aria-selected="false">Маусымдар</button>
       <button role="tab" data-tab="parts" aria-selected="false">Құрылысы</button>
       <button role="tab" data-tab="hist" aria-selected="false">Тарихы</button>
       <button role="tab" data-tab="geo" aria-selected="false">Геометрия</button>
@@ -245,7 +267,7 @@ pre.code .c { color: var(--muted); }
       </div>
       <div class="ctl">
         <label for="tRange2">Сыртқы температура <output id="oT2">−20 °C</output></label>
-        <input type="range" id="tRange2" min="-40" max="10" step="1" value="-20">
+        <input type="range" id="tRange2" min="-40" max="35" step="1" value="-20">
       </div>
       <p class="note">1 секунд = 10 минут. Модель: C·dT/dt = P<sub>ошақ</sub> − (λS/d + желдету)·(T<sub>іш</sub> − T<sub>сырт</sub>).</p>
 
@@ -264,6 +286,14 @@ pre.code .c { color: var(--muted); }
         <button class="btn copy" id="copyBtn">Көшіру</button>
         <pre class="code" id="code"></pre>
       </div>
+    </section>
+
+    <!-- SEASONS -->
+    <section class="pane" data-pane="seasons" hidden>
+      <h2>Жыл мезгілдері мен қоныстар <span class="subj hist">Тарих</span> <span class="subj phys">Физика</span></h2>
+      <p class="note" style="margin-bottom:12px">Көшпелі қазақтар жылына төрт рет қонысын ауыстырған. Мезгілді таңдасаңыз, 3D модель, сыртқы температура және датчик симуляциясы өзгереді.</p>
+      <div class="seasons" id="seasonCards"></div>
+      <div class="seasonInfo" id="seasonInfo"></div>
     </section>
 
     <!-- PARTS -->
@@ -298,7 +328,7 @@ pre.code .c { color: var(--muted); }
       <h2>Неге жылы? <span class="subj phys">Физика</span></h2>
       <div class="ctl">
         <label for="tRange">Сыртқы температура <output id="oT">−20 °C</output></label>
-        <input type="range" id="tRange" min="-40" max="10" step="1" value="-20">
+        <input type="range" id="tRange" min="-40" max="35" step="1" value="-20">
       </div>
       <div class="ctl">
         <label for="dRange">Киіз қалыңдығы <output id="oD">3 см</output></label>
@@ -330,7 +360,17 @@ const PARTS = {
   tor: { name: "Төр", d: "Есікке қарама-қарсы құрметті орын. Мұнда сандық пен жүк жиналады." },
   datchik: { name: "Датчик", d: "DHT22 температура мен ылғалдылық датчигі. Ақылды жүйенің «көзі»: әр 2 секунд сайын өлшейді." }
 };
-const state = { kanat: 6, H: 1.5, felt: "on", tags: true, sel: null, tOut: -20, dCm: 3 };
+const state = { kanat: 6, H: 1.5, felt: "on", tags: true, sel: null, tOut: -18, dCm: 6, amp: 4, rolled: false, season: "qys" };
+const SEASONS = {
+  qys: { nm: "Қыс", pas: "Қыстау", mo: "Желтоқсан – Ақпан", tOut: -18, amp: 4, d: 6, rolled: false, ground: 0xe8eef2, sun: 0.75, fx: "snow",
+    txt: "Желден қорғалған ойпаттағы немесе тау бөктеріндегі қыстауға қонады. Киіз екі қабат жабылады (≈6 см), ошақ күні-түні жанады, түндік көбіне жабық." },
+  koktem: { nm: "Көктем", pas: "Көктеу", mo: "Наурыз – Мамыр", tOut: 6, amp: 7, d: 3, rolled: false, ground: 0x5f8a3a, sun: 1.0, fx: null,
+    txt: "Қар кетіп, шөп шыққан көктеуге көшеді. Мал төлдейді. 22 наурызда Наурыз мейрамы тойланады. Түнде әлі салқын, ошақ кешке жағылады." },
+  zhaz: { nm: "Жаз", pas: "Жайлау", mo: "Маусым – Тамыз", tOut: 24, amp: 8, d: 2, rolled: true, ground: 0x7f8a3e, sun: 1.25, fx: null,
+    txt: "Салқын, шөбі шүйгін таудағы жайлауға көшеді. Жеңіл киіз жабылып, туырлықтың етегі түріледі: ауа кереге арқылы кіріп, шаңырақтан шығады (табиғи желдету)." },
+  kuz: { nm: "Күз", pas: "Күзеу", mo: "Қыркүйек – Қараша", tOut: 4, amp: 6, d: 3, rolled: false, ground: 0x9a7438, sun: 0.9, fx: "leaves",
+    txt: "Жайлаудан түсіп, күзеуде мал семіртіледі. Қой қырқылып, жүннен жаңа киіз басылады. Соғым сойылып, қысқа дайындық басталады." }
+};
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const TAN = Math.tan(32 * Math.PI / 180);
 const $ = id => document.getElementById(id);
@@ -448,6 +488,7 @@ const P = (rad, ang, y) => new THREE.Vector3(rad * Math.cos(ang), y, rad * Math.
 const tube = (pts, rad, mat, seg) => { const m = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), seg || 8, rad, 6, false), mat);
   m.castShadow = true; m.receiveShadow = true; return m; };
 
+let wallMesh = null, rollMesh = null, lowRope = null;
 let yurt = null, G = {}, fireLight = null, fireMesh = null, anchors = {}, tundikPivot = null, tundikAngle = 0;
 
 function build() {
@@ -513,9 +554,12 @@ function build() {
   const wall = new THREE.Mesh(new THREE.CylinderGeometry(R + 0.05, R + 0.05, H + 0.1, 96, 1, true, dhF, 2 * Math.PI - 2 * dhF), M.wall);
   wallTex.repeat.set(state.kanat * 2, 1);
   wall.position.y = (H + 0.1) / 2; wall.castShadow = true; wall.receiveShadow = true; G.tuyrlyq.add(wall);
+  wallMesh = wall;
+  rollMesh = new THREE.Mesh(new THREE.TorusGeometry(R + 0.1, 0.07, 8, 96, 2 * Math.PI - 2 * dhF), M.wall);
+  const rollHolder = new THREE.Group(); rollHolder.rotation.y = -(Math.PI / 2 + dhF); rollMesh.rotation.x = Math.PI / 2; rollHolder.add(rollMesh); G.tuyrlyq.add(rollHolder);
   [0.3, 0.68].forEach(f => { const holder = new THREE.Group(); holder.rotation.y = -(Math.PI / 2 + dhF); holder.position.y = H * f;
     const rope = new THREE.Mesh(new THREE.TorusGeometry(R + 0.065, 0.015, 6, 96, 2 * Math.PI - 2 * dhF), M.rope);
-    rope.rotation.x = Math.PI / 2; holder.add(rope); G.tuyrlyq.add(holder); });
+    rope.rotation.x = Math.PI / 2; holder.add(rope); G.tuyrlyq.add(holder); if (f < 0.5) lowRope = holder; });
   // Үзік (roof)
   const lift = 0.13, rb = R + 0.2, rt = r + 0.1, yb = lineY(rb) + lift, yt = lineY(rt) + lift;
   const roof = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, yt - yb, 96, 1, true), M.roof);
@@ -561,6 +605,7 @@ function build() {
     datchik: sPos.clone().add(new THREE.Vector3(0, 0.16, 0))
   };
   origMat.clear();
+  applyRoll();
   applyFelt(); applyHighlight();
   if (animT >= TOTAL) setAnim(TOTAL);
   calc();
@@ -694,7 +739,7 @@ function calc() {
 // ---------- smart yurt simulation ----------
 const SPEED = 600, C_HEAT = 1.2e6, P_MAX = 6000;
 const sim = {};
-function toutAt(t) { const h = (t / 3600) % 24; return state.tOut + 4 * Math.cos(2 * Math.PI * (h - 15) / 24); }
+function toutAt(t) { const h = (t / 3600) % 24; return state.tOut + state.amp * Math.cos(2 * Math.PI * (h - 15) / 24); }
 function simReset() {
   Object.assign(sim, { t: 12 * 3600, Tin: toutAt(12 * 3600) + 3, fire: 0, fireOn: false, tundikOpen: false, hist: [], lastSample: -1e9, running: sim.running ?? true, auto: sim.auto ?? true });
   for (let i = 0; i < 6 * 3600 / 30; i++) simStep(30);
@@ -702,7 +747,7 @@ function simReset() {
 function simStep(dt) {
   const { V, S } = dims();
   const UA = 0.04 * S / (state.dCm / 100);
-  const vent = 1.2 * 1005 * V * (sim.tundikOpen ? 2.0 : 0.4) / 3600;
+  const vent = 1.2 * 1005 * V * ((sim.tundikOpen ? 2.0 : 0.4) + (state.rolled ? 6 : 0)) / 3600;
   const To = toutAt(sim.t);
   if (sim.auto) {
     if (sim.Tin < 18) sim.fireOn = true; else if (sim.Tin > 22) sim.fireOn = false;
@@ -857,6 +902,54 @@ $("copyBtn").onclick = () => {
   try { navigator.clipboard.writeText(CODE).then(done, fallback); } catch (e) { fallback(); }
 };
 
+// ---------- seasons ----------
+function applyRoll() {
+  if (!wallMesh) return;
+  const { H } = dims(), full = H + 0.1, k = state.rolled ? 0.5 : 1;
+  wallMesh.scale.y = k; wallMesh.position.y = full - full * k / 2;
+  rollMesh.visible = state.rolled; rollMesh.parent.position.y = full * (1 - k);
+  if (lowRope) lowRope.visible = !state.rolled;
+}
+const N_FX = 1400, fxGeo = new THREE.BufferGeometry(), fxPos = new Float32Array(N_FX * 3), fxPh = new Float32Array(N_FX);
+function fxSpawn(i, anyY) {
+  const { R } = dims(); const rad = R + 0.6 + Math.sqrt(Math.random()) * 13, a = Math.random() * Math.PI * 2;
+  fxPos[i * 3] = rad * Math.cos(a); fxPos[i * 3 + 1] = anyY ? Math.random() * 12 : 12; fxPos[i * 3 + 2] = rad * Math.sin(a); fxPh[i] = Math.random() * 6.28;
+}
+for (let i = 0; i < N_FX; i++) fxSpawn(i, true);
+fxGeo.setAttribute("position", new THREE.BufferAttribute(fxPos, 3));
+const dotTex = tex(64, 64, (g) => { const gr = g.createRadialGradient(32, 32, 0, 32, 32, 30); gr.addColorStop(0, "rgba(255,255,255,1)"); gr.addColorStop(0.6, "rgba(255,255,255,.8)"); gr.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = gr; g.beginPath(); g.arc(32, 32, 30, 0, 7); g.fill(); });
+const fxMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.07, map: dotTex, transparent: true, opacity: 0.95, depthWrite: false });
+const fx = new THREE.Points(fxGeo, fxMat); fx.frustumCulled = false; scene.add(fx);
+function stepFx(dt, t) {
+  if (!fx.visible || reduce) return;
+  const leaves = SEASONS[state.season].fx === "leaves", n = leaves ? 260 : N_FX, v = leaves ? 0.7 : 1.1, sw = leaves ? 0.9 : 0.25;
+  for (let i = 0; i < n; i++) {
+    fxPos[i * 3 + 1] -= v * dt; fxPos[i * 3] += Math.sin(t * 1.3 + fxPh[i]) * sw * dt; fxPos[i * 3 + 2] += Math.cos(t * 1.1 + fxPh[i]) * sw * dt;
+    if (fxPos[i * 3 + 1] < 0) fxSpawn(i, false);
+  }
+  fxGeo.attributes.position.needsUpdate = true;
+}
+const cardsEl = $("seasonCards");
+Object.entries(SEASONS).forEach(([k, s]) => {
+  const b = document.createElement("button"); b.className = "season"; b.dataset.s = k;
+  const tTxt = v => (v < 0 ? "−" + Math.abs(v) : (v > 0 ? "+" : "") + v);
+  b.innerHTML = `<span class="pas">${s.pas}</span><span class="nm">${s.nm}</span><span class="mo">${s.mo}</span><span class="tt">${tTxt(s.tOut - s.amp)}…${tTxt(s.tOut + s.amp)} °C · киіз ${s.d} см</span>`;
+  b.onclick = () => applySeason(k); cardsEl.appendChild(b);
+});
+function applySeason(k) {
+  const s = SEASONS[k]; state.season = k;
+  state.tOut = s.tOut; state.amp = s.amp; state.dCm = s.d; state.rolled = s.rolled;
+  $("dRange").value = s.d;
+  ground.material.color.setHex(s.ground).convertSRGBToLinear(); sun.intensity = s.sun;
+  fx.visible = !!s.fx; fxMat.color.setHex(s.fx === "leaves" ? 0xd9822b : 0xffffff); fxMat.size = s.fx === "leaves" ? 0.11 : 0.06;
+  fxGeo.setDrawRange(0, s.fx === "leaves" ? 260 : N_FX);
+  $("seasonBar").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.s === k));
+  cardsEl.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.s === k));
+  $("seasonInfo").innerHTML = `<b>${s.nm} · ${s.pas}</b><p>${s.txt}</p>`;
+  applyRoll(); calc(); simReset(); updateReadout(); drawChart();
+}
+$("seasonBar").onclick = e => { const b = e.target.closest("button"); if (b) applySeason(b.dataset.s); };
+
 // ---------- controls wiring ----------
 $("kanatSeg").onclick = e => { const b = e.target.closest("button"); if (!b) return;
   $("kanatSeg").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b)); state.kanat = +b.dataset.k; build(); goView("out"); };
@@ -881,7 +974,7 @@ new MutationObserver(drawChart).observe(document.documentElement, { attributes: 
 build();
 simReset();
 const d0 = dims();
-resize(); camera.position.copy(outPos()); controls.target.set(0, d0.H * 0.9, 0); updateReadout(); drawChart();
+resize(); camera.position.copy(outPos()); controls.target.set(0, d0.H * 0.9, 0); applySeason("qys");
 
 const clock = new THREE.Clock();
 let uiTimer = 0;
@@ -891,12 +984,13 @@ let uiTimer = 0;
   if (animating) { animT += dt; if (animT >= TOTAL) { animT = TOTAL; animating = false; } setAnim(animT); }
   if (camTween) { camTween.k = Math.min(1, camTween.k + dt / 1.1); const e = ease(camTween.k);
     camera.position.lerpVectors(camTween.p0, camTween.p, e); controls.target.lerpVectors(camTween.t0, camTween.t, e); if (camTween.k >= 1) camTween = null; }
+  stepFx(dt, t);
   if (sim.running) { let left = dt * SPEED; while (left > 0) { const st = Math.min(30, left); simStep(st); left -= st; } }
   uiTimer += dt; if (uiTimer > 0.25) { uiTimer = 0; updateReadout(); if (!document.querySelector('[data-pane="sensor"]').hidden) drawChart(); }
   // fire and tündik follow the simulation
   if (fireMesh) { const f = sim.fire; fireMesh.visible = f > 0.05; fireMesh.scale.set(0.5 + 0.5 * f, (0.4 + 0.6 * f) * (reduce ? 1 : 1 + Math.sin(t * 11) * 0.08), 0.5 + 0.5 * f);
     fireLight.intensity = 1.3 * f * (reduce ? 1 : 1 + Math.sin(t * 13) * 0.12); }
-  if (tundikPivot) { const target = sim.tundikOpen ? -2.45 : 0; tundikAngle += (target - tundikAngle) * Math.min(1, dt * 3); tundikPivot.rotation.z = tundikAngle; }
+  if (tundikPivot) { const target = sim.tundikOpen ? -3.5 : 0; tundikAngle += (target - tundikAngle) * Math.min(1, dt * 3); tundikPivot.rotation.z = tundikAngle; }
   controls.update();
   renderer.render(scene, camera);
   placeLabels();

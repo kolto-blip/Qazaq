@@ -79,6 +79,9 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font-body); f
 .ovnote { position: absolute; top: 64px; left: max(12px, env(safe-area-inset-left, 0px)); max-width: min(340px, calc(100% - 24px));
   background: color-mix(in srgb, var(--panel) 90%, transparent); border: 1px solid var(--line); border-radius: 10px; padding: 8px 11px; font-size: 13px; }
 .ovnote b { color: var(--accent); }
+.skyclock { position: absolute; top: 12px; right: max(12px, env(safe-area-inset-right, 0px)); font: 600 13px/1 var(--font-mono);
+  font-variant-numeric: tabular-nums; color: var(--fg); background: color-mix(in srgb, var(--panel) 85%, transparent); border: 1px solid var(--line);
+  padding: 8px 10px; border-radius: 10px; }
 .viewbar { position: absolute; left: max(12px, env(safe-area-inset-left, 0px)); bottom: 12px; display: flex; gap: 6px; flex-wrap: wrap; }
 .hint { position: absolute; right: max(12px, env(safe-area-inset-right, 0px)); bottom: 14px; font-size: 12px; color: var(--fg);
   background: color-mix(in srgb, var(--panel) 80%, transparent); padding: 4px 8px; border-radius: 6px; }
@@ -196,6 +199,7 @@ pre.code .c { color: var(--muted); }
       <button data-s="qys" aria-pressed="true">Қыс</button><button data-s="koktem">Көктем</button><button data-s="zhaz">Жаз</button><button data-s="kuz">Күз</button>
     </div>
     <div class="ovnote" id="ovNote" hidden></div>
+    <div class="skyclock" id="skyClock" title="Датчик симуляциясының уақыты">☀ 12:00</div>
     <div class="viewbar">
       <button class="btn" id="vOut">Сырттан</button>
       <button class="btn" id="vIn">Ішінен</button>
@@ -370,13 +374,13 @@ const PARTS = {
 };
 const state = { kanat: 6, H: 1.5, felt: "on", tags: true, sel: null, tOut: -18, dCm: 6, amp: 4, rolled: false, season: "qys" };
 const SEASONS = {
-  qys: { nm: "Қыс", pas: "Қыстау", mo: "Желтоқсан – Ақпан", tOut: -18, amp: 4, d: 6, rolled: false, ground: 0xe8eef2, sun: 0.75, fx: "snow",
+  qys: { nm: "Қыс", pas: "Қыстау", mo: "Желтоқсан – Ақпан", tOut: -18, amp: 4, d: 6, rolled: false, ground: 0xe8eef2, sun: 0.75, sunH: 0.55, fx: "snow",
     txt: "Желден қорғалған ойпаттағы немесе тау бөктеріндегі қыстауға қонады. Киіз екі қабат жабылады (≈6 см), ошақ күні-түні жанады, түндік көбіне жабық." },
-  koktem: { nm: "Көктем", pas: "Көктеу", mo: "Наурыз – Мамыр", tOut: 6, amp: 7, d: 3, rolled: false, ground: 0x5f8a3a, sun: 1.0, fx: null,
+  koktem: { nm: "Көктем", pas: "Көктеу", mo: "Наурыз – Мамыр", tOut: 6, amp: 7, d: 3, rolled: false, ground: 0x5f8a3a, sun: 1.0, sunH: 0.8, fx: null,
     txt: "Қар кетіп, шөп шыққан көктеуге көшеді. Мал төлдейді. 22 наурызда Наурыз мейрамы тойланады. Түнде әлі салқын, ошақ кешке жағылады." },
-  zhaz: { nm: "Жаз", pas: "Жайлау", mo: "Маусым – Тамыз", tOut: 24, amp: 8, d: 2, rolled: true, ground: 0x7f8a3e, sun: 1.25, fx: null,
+  zhaz: { nm: "Жаз", pas: "Жайлау", mo: "Маусым – Тамыз", tOut: 24, amp: 8, d: 2, rolled: true, ground: 0x7f8a3e, sun: 1.25, sunH: 1.0, fx: null,
     txt: "Салқын, шөбі шүйгін таудағы жайлауға көшеді. Жеңіл киіз жабылып, туырлықтың етегі түріледі: ауа кереге арқылы кіріп, шаңырақтан шығады (табиғи желдету)." },
-  kuz: { nm: "Күз", pas: "Күзеу", mo: "Қыркүйек – Қараша", tOut: 4, amp: 6, d: 3, rolled: false, ground: 0x9a7438, sun: 0.9, fx: "leaves",
+  kuz: { nm: "Күз", pas: "Күзеу", mo: "Қыркүйек – Қараша", tOut: 4, amp: 6, d: 3, rolled: false, ground: 0x9a7438, sun: 0.9, sunH: 0.75, fx: "leaves",
     txt: "Жайлаудан түсіп, күзеуде мал семіртіледі. Қой қырқылып, жүннен жаңа киіз басылады. Соғым сойылып, қысқа дайындық басталады." }
 };
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -405,14 +409,14 @@ renderer.outputEncoding = THREE.sRGBEncoding;
 view.prepend(renderer.domElement);
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(45, 1, 0.05, 200);
+const camera = new THREE.PerspectiveCamera(45, 1, 0.05, 260);
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.maxPolarAngle = Math.PI * 0.495;
 controls.minDistance = 0.3;
 controls.maxDistance = 40;
 
-scene.add(new THREE.HemisphereLight(0xdfe9f5, 0x6b5a3a, 0.75));
+const hemi = new THREE.HemisphereLight(0xdfe9f5, 0x6b5a3a, 0.75); scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xfff1dc, 1.0);
 sun.position.set(8, 12, 6);
 sun.castShadow = true;
@@ -420,7 +424,7 @@ sun.shadow.mapSize.set(2048, 2048);
 sun.shadow.bias = -0.0005;
 scene.add(sun);
 
-const ground = new THREE.Mesh(new THREE.CircleGeometry(80, 64), new THREE.MeshStandardMaterial({ color: 0x77804f, roughness: 1 }));
+const ground = new THREE.Mesh(new THREE.CircleGeometry(120, 64), new THREE.MeshStandardMaterial({ color: 0x77804f, roughness: 1 }));
 ground.rotation.x = -Math.PI / 2;
 ground.receiveShadow = true;
 scene.add(ground);
@@ -814,7 +818,7 @@ const SPEED = 600, C_HEAT = 1.2e6, P_MAX = 6000;
 const sim = {};
 function toutAt(t) { const h = (t / 3600) % 24; return state.tOut + state.amp * Math.cos(2 * Math.PI * (h - 15) / 24); }
 function simReset() {
-  Object.assign(sim, { t: 12 * 3600, Tin: toutAt(12 * 3600) + 3, fire: 0, fireOn: false, tundikOpen: false, hist: [], lastSample: -1e9, running: sim.running ?? true, auto: sim.auto ?? true });
+  Object.assign(sim, { t: 4 * 3600, Tin: toutAt(4 * 3600) + 3, fire: 0, fireOn: false, tundikOpen: false, hist: [], lastSample: -1e9, running: sim.running ?? true, auto: sim.auto ?? true });
   for (let i = 0; i < 6 * 3600 / 30; i++) simStep(30);
 }
 function simStep(dt) {
@@ -874,6 +878,7 @@ function updateReadout() {
   $("sIn").textContent = fmtT(sim.Tin); $("sOut").textContent = fmtT(To);
   const hh = Math.floor(sim.t / 3600) % 24, mm = Math.floor(sim.t / 60) % 60;
   $("sClock").textContent = String(hh).padStart(2, "0") + ":" + String(mm).padStart(2, "0");
+  $("skyClock").textContent = (hh >= 6 && hh < 18 ? "☀ " : "☾ ") + $("sClock").textContent;
   const pills = [];
   if (sim.Tin < 18) pills.push(['warn', '🔔 Суық! Отын салыңыз']);
   else if (sim.Tin > 24) pills.push(['warn', 'Тым ыстық']);
@@ -1013,7 +1018,7 @@ function applySeason(k) {
   const s = SEASONS[k]; state.season = k;
   state.tOut = s.tOut; state.amp = s.amp; state.dCm = s.d; state.rolled = s.rolled;
   $("dRange").value = s.d;
-  ground.material.color.setHex(s.ground).convertSRGBToLinear(); sun.intensity = s.sun;
+  ground.material.color.setHex(s.ground).convertSRGBToLinear(); state.sunK = s.sun; state.sunH = s.sunH;
   fx.visible = !!s.fx; fxMat.color.setHex(s.fx === "leaves" ? 0xd9822b : 0xffffff); fxMat.size = s.fx === "leaves" ? 0.11 : 0.06;
   fxGeo.setDrawRange(0, s.fx === "leaves" ? 260 : N_FX);
   $("seasonBar").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.s === k));
@@ -1022,6 +1027,124 @@ function applySeason(k) {
   applyRoll(); calc(); simReset(); updateReadout(); drawChart();
 }
 $("seasonBar").onclick = e => { const b = e.target.closest("button"); if (b) applySeason(b.dataset.s); };
+
+// ---------- environment: sky, day/night, mountains, clouds, smoke, animals ----------
+const skyMat = new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false, fog: false,
+  uniforms: { top: { value: new THREE.Color() }, bot: { value: new THREE.Color() } },
+  vertexShader: "varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }",
+  fragmentShader: "uniform vec3 top; uniform vec3 bot; varying vec3 vP; void main(){ float h = clamp(vP.y * 1.8 + 0.04, 0.0, 1.0); gl_FragColor = vec4(mix(bot, top, pow(h, 0.65)), 1.0); }" });
+const sky = new THREE.Mesh(new THREE.SphereGeometry(190, 32, 16), skyMat); sky.renderOrder = -1; scene.add(sky);
+scene.fog = new THREE.Fog(0xcfe4f2, 45, 170);
+const starGeo = new THREE.BufferGeometry(), starPos = [];
+for (let i = 0; i < 500; i++) { const a = Math.random() * Math.PI * 2, y = 0.08 + Math.random() * 0.92, rr = Math.sqrt(1 - y * y); starPos.push(180 * rr * Math.cos(a), 180 * y, 180 * rr * Math.sin(a)); }
+starGeo.setAttribute("position", new THREE.Float32BufferAttribute(starPos, 3));
+const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 2, sizeAttenuation: false, transparent: true, opacity: 0, fog: false, depthWrite: false });
+scene.add(new THREE.Points(starGeo, starMat));
+const sunDisc = new THREE.Mesh(new THREE.SphereGeometry(5, 16, 12), new THREE.MeshBasicMaterial({ color: 0xfff1b8, fog: false }));
+const moonDisc = new THREE.Mesh(new THREE.SphereGeometry(3.5, 16, 12), new THREE.MeshBasicMaterial({ color: 0xe4eaf4, fog: false }));
+scene.add(sunDisc, moonDisc);
+
+// mountains ring (Алатау-like ridge with snow caps)
+(function () {
+  const N = 180, pos = [], col = [], idx = [], rock = new THREE.Color(0x6a7280).convertSRGBToLinear(), snow = new THREE.Color(0xf4f7fb).convertSRGBToLinear(), foot = new THREE.Color(0x5d6a52).convertSRGBToLinear();
+  for (let i = 0; i <= N; i++) {
+    const a = i / N * Math.PI * 2;
+    const hgt = 0.75 * (5 + 6 * (0.5 + 0.5 * Math.sin(a * 3 + 1)) + 5 * (0.5 + 0.5 * Math.sin(a * 7 + 2.3)) + 2.2 * Math.sin(a * 19) + 1.2 * Math.sin(a * 41));
+    [[88, 0, foot], [96, hgt * 0.5, hgt > 9 ? rock : foot], [104, hgt, hgt > 8 ? snow : rock]].forEach(([rad, y, c]) => { pos.push(rad * Math.cos(a), y, rad * Math.sin(a)); col.push(c.r, c.g, c.b); });
+    if (i < N) { const b = i * 3; idx.push(b, b + 3, b + 1, b + 1, b + 3, b + 4, b + 1, b + 4, b + 2, b + 2, b + 4, b + 5); }
+  }
+  const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("color", new THREE.Float32BufferAttribute(col, 3)); g.setIndex(idx); g.computeVertexNormals();
+  scene.add(new THREE.Mesh(g, new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, side: THREE.DoubleSide })));
+})();
+
+// clouds
+const cloudG = new THREE.Group(); scene.add(cloudG);
+const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true });
+for (let c = 0; c < 9; c++) {
+  const cl = new THREE.Group(), a = c / 9 * Math.PI * 2 + Math.random() * 0.4, rad = 38 + Math.random() * 25;
+  for (let k = 0; k < 5; k++) { const m = new THREE.Mesh(new THREE.IcosahedronGeometry(2 + Math.random() * 1.6, 1), cloudMat); m.position.set(k * 2.4 - 5, Math.random() * 1.2, Math.random() * 2 - 1); m.scale.y = 0.6; cl.add(m); }
+  cl.position.set(rad * Math.cos(a), 24 + Math.random() * 10, rad * Math.sin(a)); cl.lookAt(0, cl.position.y, 0); cloudG.add(cl);
+}
+
+// smoke from the shanyraq
+const N_SM = 90, smPos = new Float32Array(N_SM * 3).fill(-999), smAge = new Float32Array(N_SM).fill(99);
+const smGeo = new THREE.BufferGeometry(); smGeo.setAttribute("position", new THREE.BufferAttribute(smPos, 3));
+const smMat = new THREE.PointsMaterial({ color: 0xa9a9a9, size: 0.8, map: dotTex, transparent: true, opacity: 0.35, depthWrite: false });
+const smoke = new THREE.Points(smGeo, smMat); smoke.frustumCulled = false; scene.add(smoke);
+let smAcc = 0, smNext = 0;
+
+// sheep grazing around
+const sheepMat = new THREE.MeshStandardMaterial({ color: 0xefe9dc, roughness: 1 }), sheepDark = new THREE.MeshStandardMaterial({ color: 0x2b2522, roughness: 1 });
+const sheep = [];
+function placeSheep(o, ang) { const { R } = dims(), rad = R + 3 + Math.random() * 11; o.position.set(rad * Math.cos(ang), 0, rad * Math.sin(ang)); }
+for (let i = 0; i < 8; i++) {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 8), sheepMat); body.scale.set(0.38, 0.26, 0.24); body.position.y = 0.45; body.castShadow = true; g.add(body);
+  const head = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.16, 0.14), sheepDark); head.position.set(0.4, 0.55, 0); g.add(head);
+  const legs = [];
+  [[0.18, 0.1], [0.18, -0.1], [-0.18, 0.1], [-0.18, -0.1]].forEach(([x, z]) => { const l = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.32, 5), sheepDark); l.position.set(x, 0.16, z); g.add(l); legs.push(l); });
+  const ang = -0.6 + i * 0.75 + Math.random() * 0.3; placeSheep(g, ang); g.rotation.y = Math.random() * 6;
+  g.userData = { head, legs, ang, target: null, wait: Math.random() * 4, phase: Math.random() * 6 };
+  scene.add(g); sheep.push(g);
+}
+function stepSheep(dt, t) {
+  const { R } = dims();
+  sheep.forEach(o => {
+    const u = o.userData;
+    if (!u.target) {
+      u.wait -= dt; u.head.position.y = 0.42 + Math.sin(t * 3 + u.phase) * 0.03;
+      if (u.wait <= 0) { u.ang += (Math.random() - 0.5) * 0.9; const rad = R + 3 + Math.random() * 11; u.target = new THREE.Vector3(rad * Math.cos(u.ang), 0, rad * Math.sin(u.ang)); }
+      return;
+    }
+    const dx = u.target.x - o.position.x, dz = u.target.z - o.position.z, dist = Math.hypot(dx, dz);
+    if (dist < 0.1) { u.target = null; u.wait = 2 + Math.random() * 6; return; }
+    const yaw = Math.atan2(-dz, dx); let dy = yaw - o.rotation.y; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); o.rotation.y += dy * Math.min(1, dt * 3);
+    const step = Math.min(dist, 0.45 * dt); o.position.x += dx / dist * step; o.position.z += dz / dist * step;
+    u.head.position.y = 0.55; u.legs.forEach((l, k) => { l.rotation.z = Math.sin(t * 9 + k * Math.PI) * 0.35; });
+  });
+}
+
+// eagle (бүркіт) circling
+const eagle = new THREE.Group(), eMat = new THREE.MeshLambertMaterial({ color: 0x3b2a1e, side: THREE.DoubleSide });
+const eBody = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.9, 6), eMat); eBody.rotation.z = -Math.PI / 2; eagle.add(eBody);
+const wingL = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 1.4), eMat), wingR = wingL.clone();
+wingL.rotation.x = -Math.PI / 2; wingR.rotation.x = -Math.PI / 2;
+const wl = new THREE.Group(), wr = new THREE.Group(); wingL.position.z = -0.7; wingR.position.z = 0.7; wl.add(wingL); wr.add(wingR); eagle.add(wl, wr);
+scene.add(eagle);
+
+const cTop = new THREE.Color(), cBot = new THREE.Color(), tmpC = new THREE.Color();
+const SKY = { dayT: new THREE.Color(0x4f8fd6), dayB: new THREE.Color(0xd4e6f2), duskT: new THREE.Color(0x3a4a86), duskB: new THREE.Color(0xf2a462), nightT: new THREE.Color(0x03050c), nightB: new THREE.Color(0x141c31) };
+const sstep = (a, b, x) => { const k = Math.min(1, Math.max(0, (x - a) / (b - a))); return k * k * (3 - 2 * k); };
+function updateEnv(dt, t) {
+  const h = (sim.t / 3600) % 24, th = (h - 6) / 24 * Math.PI * 2, sh = state.sunH || 0.8;
+  const dir = new THREE.Vector3(Math.cos(th), Math.sin(th) * sh, 0.45).normalize();
+  const e = dir.y, day = sstep(-0.08, 0.22, e), tw = Math.max(0, 1 - Math.abs(e - 0.03) / 0.16);
+  cTop.copy(SKY.nightT).lerp(SKY.dayT, day).lerp(SKY.duskT, tw * 0.7);
+  cBot.copy(SKY.nightB).lerp(SKY.dayB, day).lerp(SKY.duskB, tw * 0.85);
+  if (state.season === "qys") cBot.lerp(tmpC.set(0xe6edf3), 0.25 * day);
+  skyMat.uniforms.top.value.copy(cTop); skyMat.uniforms.bot.value.copy(cBot);
+  scene.fog.color.copy(cBot).convertSRGBToLinear();
+  starMat.opacity = 1 - sstep(-0.15, 0.05, e);
+  sunDisc.position.copy(dir).multiplyScalar(170); sunDisc.visible = e > -0.05;
+  const mdir = new THREE.Vector3(-dir.x, -dir.y, dir.z); moonDisc.position.copy(mdir).multiplyScalar(170); moonDisc.visible = mdir.y > -0.05;
+  if (e > 0) { sun.position.copy(dir).multiplyScalar(30); sun.color.setHex(0xfff1dc).lerp(tmpC.set(0xffa860), tw); sun.intensity = (state.sunK || 1) * sstep(0, 0.15, e); }
+  else { sun.position.copy(mdir).multiplyScalar(30); sun.color.setHex(0x9fb4ff); sun.intensity = 0.18 * sstep(0, 0.2, mdir.y); }
+  hemi.intensity = 0.15 + 0.6 * day;
+  hemi.color.setHex(0xdfe9f5).lerp(tmpC.set(0x6f7fb0), 1 - day);
+  cloudMat.color.setHex(0xffffff).lerp(tmpC.set(0xffc49a), tw * 0.6);
+  if (reduce) return;
+  cloudG.rotation.y += dt * 0.008;
+  // smoke
+  const { Ht } = dims();
+  smAcc += dt * 18 * sim.fire;
+  while (smAcc > 1) { smAcc -= 1; const i = smNext++ % N_SM; smAge[i] = 0; smPos[i * 3] = (Math.random() - 0.5) * 0.3; smPos[i * 3 + 1] = Ht + 0.15; smPos[i * 3 + 2] = (Math.random() - 0.5) * 0.3; }
+  for (let i = 0; i < N_SM; i++) { if (smAge[i] > 5) { smPos[i * 3 + 1] = -999; continue; } smAge[i] += dt;
+    smPos[i * 3] += (0.35 + Math.sin(t + i) * 0.1) * dt; smPos[i * 3 + 1] += 0.75 * dt; smPos[i * 3 + 2] += Math.cos(t * 0.7 + i) * 0.12 * dt; }
+  smGeo.attributes.position.needsUpdate = true;
+  stepSheep(dt, t);
+  const ea = t * 0.12; eagle.position.set(18 * Math.cos(ea), 15 + Math.sin(t * 0.3) * 1.5, 18 * Math.sin(ea)); eagle.rotation.y = -ea - Math.PI / 2 + Math.PI;
+  eagle.rotation.z = 0.25; const flap = Math.sin(t * 2.2) > 0.6 ? Math.sin(t * 9) * 0.5 : 0.05; wl.rotation.x = flap; wr.rotation.x = -flap;
+}
 
 // ---------- controls wiring ----------
 $("kanatSeg").onclick = e => { const b = e.target.closest("button"); if (!b) return;
@@ -1058,6 +1181,7 @@ let uiTimer = 0;
   if (camTween) { camTween.k = Math.min(1, camTween.k + dt / 1.1); const e = ease(camTween.k);
     camera.position.lerpVectors(camTween.p0, camTween.p, e); controls.target.lerpVectors(camTween.t0, camTween.t, e); if (camTween.k >= 1) camTween = null; }
   stepFx(dt, t);
+  updateEnv(dt, t);
   if (sim.running) { let left = dt * SPEED; while (left > 0) { const st = Math.min(30, left); simStep(st); left -= st; } }
   uiTimer += dt; if (uiTimer > 0.25) { uiTimer = 0; updateReadout(); if (!document.querySelector('[data-pane="sensor"]').hidden) drawChart(); }
   // fire and tündik follow the simulation

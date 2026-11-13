@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <style>*,*::before,*::after{box-sizing:border-box}body{margin:0}[hidden]{display:none!important}</style>
-<title>Киіз үй 3D</title>
+<title>Ақылды киіз үй</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Golos+Text:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
 <style>
-/* Layout: full-height 3D viewport on the left, scrolling study panel on the right; stacks on phones */
+/* Layout: full-height 3D viewport on the left, tabbed study panel on the right; stacks on phones */
 :root {
   --bg: #edf0ec;
   --panel: #fbfcfa;
@@ -20,27 +20,31 @@
   --accent: #b03a2a;      /* painted uyk red */
   --wood: #8a5a2e;
   --blue: #2b5f8e;
+  --ok: #2f7d4f;
+  --fire: #d9822b;
   --sky-top: #8fb9de;
   --sky-bot: #e6ece4;
   --chip: #e3e8e1;
+  --code-bg: #f1f3ef;
   --font-display: "Unbounded", "Segoe UI", system-ui, sans-serif;
   --font-body: "Golos Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #10151c; --panel: #161d26; --fg: #e7eaee; --muted: #9aa4b2; --line: #263040;
-    --accent: #e2644e; --wood: #c98d55; --blue: #79a9d8; --sky-top: #0a1324; --sky-bot: #2e3648;
-    --chip: #202936; color-scheme: dark;
+    --accent: #e2644e; --wood: #c98d55; --blue: #79a9d8; --ok: #5fbf86; --fire: #f0a050;
+    --sky-top: #0a1324; --sky-bot: #2e3648; --chip: #202936; --code-bg: #0f141b; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #10151c; --panel: #161d26; --fg: #e7eaee; --muted: #9aa4b2; --line: #263040;
-  --accent: #e2644e; --wood: #c98d55; --blue: #79a9d8; --sky-top: #0a1324; --sky-bot: #2e3648;
-  --chip: #202936; color-scheme: dark;
+  --accent: #e2644e; --wood: #c98d55; --blue: #79a9d8; --ok: #5fbf86; --fire: #f0a050;
+  --sky-top: #0a1324; --sky-bot: #2e3648; --chip: #202936; --code-bg: #0f141b; color-scheme: dark;
 }
 html, body { height: 100%; }
 body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
-.app { display: grid; grid-template-columns: minmax(0, 1fr) 380px; height: 100%; }
+.app { display: grid; grid-template-columns: minmax(0, 1fr) 420px; height: 100%; }
 .view { position: relative; min-width: 0; overflow: hidden;
   background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-bot) 62%); }
 .view canvas { display: block; width: 100%; height: 100%; touch-action: none; }
@@ -51,20 +55,23 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font-body); f
 .tag::after { content: ""; position: absolute; left: 50%; bottom: -6px; width: 1px; height: 6px; background: var(--fg); opacity: .5; }
 .tag:hover, .tag:focus-visible { border-color: var(--accent); outline: none; }
 .tag.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+.tag.sensor { background: #14231a; color: #8ff0a8; border-color: #2c4a36; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 .viewbar { position: absolute; left: max(12px, env(safe-area-inset-left, 0px)); bottom: 12px; display: flex; gap: 6px; flex-wrap: wrap; }
 .hint { position: absolute; right: max(12px, env(safe-area-inset-right, 0px)); bottom: 14px; font-size: 12px; color: var(--fg);
   background: color-mix(in srgb, var(--panel) 80%, transparent); padding: 4px 8px; border-radius: 6px; }
 
 .panel { background: var(--panel); border-left: 1px solid var(--line); overflow-y: auto; min-width: 0;
   padding-block: 22px 32px; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px));
-  display: flex; flex-direction: column; gap: 24px; }
-h1 { font-family: var(--font-display); font-weight: 700; font-size: 26px; line-height: 1.15; margin: 0; letter-spacing: -.01em; text-wrap: balance; }
+  display: flex; flex-direction: column; gap: 20px; }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: 25px; line-height: 1.15; margin: 0; letter-spacing: -.01em; text-wrap: balance; }
 h1 span { color: var(--accent); }
 .lede { margin: 6px 0 0; color: var(--muted); }
-h2 { font-family: var(--font-display); font-weight: 500; font-size: 13px; text-transform: uppercase; letter-spacing: .08em;
+.subjects { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+h2 { font-family: var(--font-display); font-weight: 500; font-size: 12.5px; text-transform: uppercase; letter-spacing: .08em;
   margin: 0 0 10px; color: var(--muted); }
+h3 { font-size: 15px; margin: 0 0 6px; }
 section { display: flex; flex-direction: column; }
-.ctl { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.ctl { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
 .ctl label, .ctl .lbl { font-weight: 500; display: flex; justify-content: space-between; gap: 8px; }
 .ctl output { font-variant-numeric: tabular-nums; color: var(--accent); font-weight: 600; }
 input[type=range] { width: 100%; accent-color: var(--accent); }
@@ -72,23 +79,33 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 .seg button, .btn { font: 500 13px/1 var(--font-body); color: var(--fg); background: var(--chip); border: 1px solid transparent;
   padding: 8px 11px; border-radius: 8px; cursor: pointer; }
 .seg button[aria-pressed="true"] { background: var(--fg); color: var(--panel); }
-.seg button:focus-visible, .btn:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.seg button:focus-visible, .btn:focus-visible, input:focus-visible, .tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .btn.primary { background: var(--accent); color: #fff; }
 .view .btn { background: var(--panel); border-color: var(--line); }
-.row { display: flex; gap: 8px; flex-wrap: wrap; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .check { display: flex; align-items: center; gap: 8px; font-weight: 500; cursor: pointer; }
 .check input { accent-color: var(--accent); width: 16px; height: 16px; }
+details.settings { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+details.settings summary { cursor: pointer; font-weight: 600; }
+details.settings[open] summary { margin-bottom: 12px; }
+
+.tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+.tabs button { all: unset; cursor: pointer; padding: 9px 10px; font-weight: 600; font-size: 13.5px; color: var(--muted);
+  border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; }
+.tabs button[aria-selected="true"] { color: var(--fg); border-color: var(--accent); }
 
 .calc { display: grid; grid-template-columns: 1fr auto; border-top: 1px solid var(--line); }
 .calc > div { padding: 9px 0; border-bottom: 1px solid var(--line); min-width: 0; }
 .calc .k { font-weight: 500; }
-.calc .k small { display: block; color: var(--muted); font-weight: 400; font-size: 12px; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+.calc .k small { display: block; color: var(--muted); font-weight: 400; font-size: 12px; font-family: var(--font-mono); }
 .calc .v { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; padding-left: 12px; }
 .subj { display: inline-block; font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em;
-  padding: 2px 6px; border-radius: 4px; margin-left: 6px; vertical-align: 1px; }
+  padding: 3px 7px; border-radius: 4px; }
 .subj.math { background: color-mix(in srgb, var(--blue) 18%, transparent); color: var(--blue); }
 .subj.phys { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); }
 .subj.hist { background: color-mix(in srgb, var(--wood) 20%, transparent); color: var(--wood); }
+.subj.info { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); }
 
 .heat { margin-top: 12px; padding: 12px; border-radius: 10px; background: var(--chip); }
 .heat .big { font-family: var(--font-display); font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -104,15 +121,45 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 .parts span { color: var(--muted); font-size: 13.5px; }
 .note { font-size: 12.5px; color: var(--muted); margin: 0; }
 
-@media (max-width: 860px) {
+.timeline { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.timeline li { display: grid; grid-template-columns: 92px 1fr; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.timeline .when { font-family: var(--font-mono); font-size: 12.5px; font-weight: 600; color: var(--wood); padding-top: 2px; }
+.timeline p { margin: 2px 0 0; font-size: 13.5px; color: var(--muted); }
+
+/* sensor */
+.readout { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.readout > div { background: var(--chip); border-radius: 10px; padding: 10px; min-width: 0; }
+.readout small { display: block; font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.readout b { font-family: var(--font-display); font-size: 20px; font-variant-numeric: tabular-nums; font-weight: 700; }
+.readout .in b { color: var(--accent); }
+.readout .out b { color: var(--blue); }
+.status { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+.pill { font-size: 12.5px; font-weight: 600; padding: 4px 9px; border-radius: 999px; background: var(--chip); color: var(--muted); }
+.pill.fire { background: color-mix(in srgb, var(--fire) 22%, transparent); color: var(--fire); }
+.pill.vent { background: color-mix(in srgb, var(--blue) 18%, transparent); color: var(--blue); }
+.pill.ok { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); }
+.pill.warn { background: var(--accent); color: #fff; }
+.chart { width: 100%; height: 190px; display: block; margin-top: 12px; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-top: 6px; }
+.legend i { display: inline-block; width: 14px; height: 3px; vertical-align: middle; margin-right: 5px; border-radius: 2px; }
+.algo { margin: 0; padding-left: 18px; font-size: 13.5px; display: flex; flex-direction: column; gap: 4px; }
+.algo code, .note code { font-family: var(--font-mono); font-size: 12px; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+.codewrap { position: relative; }
+pre.code { margin: 0; background: var(--code-bg); border: 1px solid var(--line); border-radius: 10px; padding: 12px; overflow-x: auto;
+  font: 12px/1.55 var(--font-mono); color: var(--fg); max-height: 340px; }
+pre.code .c { color: var(--muted); }
+.copy { position: absolute; top: 8px; right: 8px; }
+.kit { margin: 0; padding-left: 18px; font-size: 13.5px; }
+
+@media (max-width: 900px) {
   html, body { height: auto; }
   .app { grid-template-columns: 1fr; height: auto; }
-  .view { height: 62vh; min-height: 340px; }
+  .view { height: 60vh; min-height: 340px; }
   .panel { border-left: 0; border-top: 1px solid var(--line); overflow: visible;
     padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
   .hint { display: none; }
 }
-@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+@media (max-width: 400px) { .readout b { font-size: 17px; } .timeline li { grid-template-columns: 74px 1fr; } }
 </style>
 </head>
 <body>
@@ -130,12 +177,13 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 
   <aside class="panel">
     <header>
-      <h1>Киіз <span>үй</span> 3D</h1>
-      <p class="lede">Қазақтың жиналмалы үйі: құрылысы, геометриясы және жылу физикасы бір модельде.</p>
+      <h1>Ақылды <span>киіз үй</span></h1>
+      <p class="lede">Ата-баба баспанасы мен заманауи датчик бір жобада: құрылысы, тарихы, геометриясы және жылу физикасы.</p>
+      <div class="subjects"><span class="subj hist">Тарих</span><span class="subj phys">Физика</span><span class="subj math">Математика</span><span class="subj info">Информатика</span></div>
     </header>
 
-    <section>
-      <h2>Модельді баптау</h2>
+    <details class="settings">
+      <summary>Модельді баптау</summary>
       <div class="ctl">
         <span class="lbl">Қанат саны <output id="oKanat">6</output></span>
         <div class="seg" id="kanatSeg" role="group" aria-label="Қанат саны">
@@ -156,20 +204,97 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
         <button class="btn primary" id="assemble">▶ Құрастыру</button>
         <label class="check"><input type="checkbox" id="tagsChk" checked> Атаулар</label>
       </div>
+    </details>
+
+    <nav class="tabs" role="tablist" aria-label="Жоба бөлімдері">
+      <button role="tab" data-tab="sensor" aria-selected="true">Датчик</button>
+      <button role="tab" data-tab="parts" aria-selected="false">Құрылысы</button>
+      <button role="tab" data-tab="hist" aria-selected="false">Тарихы</button>
+      <button role="tab" data-tab="geo" aria-selected="false">Геометрия</button>
+      <button role="tab" data-tab="heat" aria-selected="false">Жылу</button>
+    </nav>
+
+    <!-- SENSOR -->
+    <section class="pane" data-pane="sensor">
+      <h2>Ақылды жүйе <span class="subj info">Информатика</span></h2>
+      <div class="readout">
+        <div class="in"><small>Іште</small><b id="sIn">—</b></div>
+        <div class="out"><small>Сыртта</small><b id="sOut">—</b></div>
+        <div><small>Уақыт</small><b id="sClock">—</b></div>
+      </div>
+      <div class="status" id="sStatus"></div>
+      <canvas class="chart" id="chart" aria-label="Соңғы тәуліктегі температура графигі" role="img"></canvas>
+      <div class="legend">
+        <span><i style="background:var(--accent)"></i>Іштегі</span>
+        <span><i style="background:var(--blue)"></i>Сырттағы</span>
+        <span><i style="background:color-mix(in srgb, var(--ok) 35%, transparent)"></i>Жайлы аймақ 18–22 °C</span>
+        <span><i style="background:var(--fire)"></i>Ошақ жанып тұр</span>
+      </div>
+
+      <div class="ctl" style="margin-top:14px">
+        <span class="lbl">Басқару режимі</span>
+        <div class="seg" id="modeSeg" role="group" aria-label="Басқару режимі">
+          <button data-m="auto" aria-pressed="true">Ақылды (автомат)</button><button data-m="manual">Қолмен</button>
+        </div>
+      </div>
+      <div class="row" style="margin-bottom:12px">
+        <button class="btn" id="fireBtn" disabled>Ошақты жағу</button>
+        <button class="btn" id="tundikBtn" disabled>Түндікті ашу</button>
+        <button class="btn" id="pauseBtn">⏸ Тоқтату</button>
+        <button class="btn" id="resetBtn">↺ Басынан</button>
+      </div>
+      <div class="ctl">
+        <label for="tRange2">Сыртқы температура <output id="oT2">−20 °C</output></label>
+        <input type="range" id="tRange2" min="-40" max="10" step="1" value="-20">
+      </div>
+      <p class="note">1 секунд = 10 минут. Модель: C·dT/dt = P<sub>ошақ</sub> − (λS/d + желдету)·(T<sub>іш</sub> − T<sub>сырт</sub>).</p>
+
+      <h3 style="margin-top:18px">Алгоритм</h3>
+      <ol class="algo">
+        <li>Әр 2 секунд сайын датчиктен <code>T</code> мен ылғалдылықты оқу.</li>
+        <li>Егер <code>T &lt; 18</code>: зуммер шырылдайды, «Отын сал!» (ошақ жағылады).</li>
+        <li>Егер <code>T &gt; 22</code>: отын салуды тоқтату.</li>
+        <li>Егер <code>T &gt; 24</code>: серво түндікті ашады; <code>T &lt; 21</code> болса жабады.</li>
+        <li>Мәндерді экранға шығару және компьютерге жіберу.</li>
+      </ol>
+
+      <h3 style="margin-top:18px">Arduino коды</h3>
+      <p class="note" style="margin-bottom:8px">Керек құрал: Arduino Uno, DHT22 датчигі, LCD 1602 (I2C), зуммер, SG90 сервожетек. Кодты wokwi.com симуляторында тегін тексеруге болады.</p>
+      <div class="codewrap">
+        <button class="btn copy" id="copyBtn">Көшіру</button>
+        <pre class="code" id="code"></pre>
+      </div>
     </section>
 
-    <section>
-      <h2>Бөліктері <span class="subj hist">Тарих</span></h2>
+    <!-- PARTS -->
+    <section class="pane" data-pane="parts" hidden>
+      <h2>Бөліктері</h2>
       <ul class="parts" id="parts"></ul>
     </section>
 
-    <section>
-      <h2>Есептеулер <span class="subj math">Математика</span></h2>
-      <div class="calc" id="calc"></div>
-      <p class="note" style="margin-top:8px">Бір қанат ені ≈ 3,2 м деп алынды. Шатыр еңісі 32°.</p>
+    <!-- HISTORY -->
+    <section class="pane" data-pane="hist" hidden>
+      <h2>Шығу тарихы <span class="subj hist">Тарих</span></h2>
+      <ol class="timeline">
+        <li><span class="when">б.з.д. V ғ.</span><div><b>Сақтар мен скифтер</b><p>Геродот көшпелілердің киізден жасалған шатырлары мен арбадағы үйлерін сипаттаған. Киіз басу өнері сол кезде-ақ белгілі болған.</p></div></li>
+        <li><span class="when">VI–X ғғ.</span><div><b>Түркі дәуірі</b><p>Кереге, уық және шаңырақтан тұратын жиналмалы үй кең тараған деп саналады. Оны тез жығып, түйеге артып көшуге болды.</p></div></li>
+        <li><span class="when">XIII–XIV ғғ.</span><div><b>Саяхатшылар жазбалары</b><p>Плано Карпини, Гильом Рубрук, Ибн Баттута көшпелілердің ақ киіз үйлерін таңдана сипаттаған.</p></div></li>
+        <li><span class="when">1465</span><div><b>Қазақ хандығы</b><p>Керей мен Жәнібек хандар құрған мемлекетте киіз үй негізгі баспана болды. Хан ордасы да киіз үйден тұрған.</p></div></li>
+        <li><span class="when">XIX–XX ғғ.</span><div><b>Отырықшылыққа көшу</b><p>Тұрақты үйлер көбейіп, киіз үй жайлауда, тойда және мерекеде қолданылатын болды.</p></div></li>
+        <li><span class="when">2014</span><div><b>ЮНЕСКО</b><p>«Қазақ және қырғыз киіз үйін жасаудың дәстүрлі білімі мен дағдылары» адамзаттың материалдық емес мәдени мұрасы тізіміне енді.</p></div></li>
+        <li><span class="when">Бүгін</span><div><b>Наурыз бен туризм</b><p>Наурыз мерекесінде, этноауылдарда киіз үй тігіледі. Шаңырақ Қазақстан елтаңбасында бейнеленген.</p></div></li>
+      </ol>
     </section>
 
-    <section>
+    <!-- GEOMETRY -->
+    <section class="pane" data-pane="geo" hidden>
+      <h2>Есептеулер <span class="subj math">Математика</span></h2>
+      <div class="calc" id="calc"></div>
+      <p class="note" style="margin-top:8px">Бір қанат ені ≈ 3,2 м деп алынды. Шатыр еңісі 32°. Кереге — цилиндр, шатыр — қиық конус. Қанат санын «Модельді баптау» бөлімінде өзгертіңіз.</p>
+    </section>
+
+    <!-- HEAT -->
+    <section class="pane" data-pane="heat" hidden>
       <h2>Неге жылы? <span class="subj phys">Физика</span></h2>
       <div class="ctl">
         <label for="tRange">Сыртқы температура <output id="oT">−20 °C</output></label>
@@ -183,7 +308,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
         <div class="big" id="qOut">—</div>
         <p id="qExplain"></p>
       </div>
-      <p class="note" style="margin-top:10px">Формула: Q = λ · S · ΔT / d. Киіздің жылу өткізгіштігі λ ≈ 0,04 Вт/(м·К), бұл кірпіштен (≈0,7) шамамен 17 есе аз. Ішкі температура +18 °C. Жылы ауа көтеріліп, түтін шаңырақтан шығады (конвекция).</p>
+      <p class="note" style="margin-top:10px">Формула: Q = λ · S · ΔT / d. Киіздің жылу өткізгіштігі λ ≈ 0,04 Вт/(м·К), бұл кірпіштен (≈0,7) шамамен 17 есе аз. Ішкі температура +18 °C. Жылы ауа көтеріліп, түтін шаңырақтан шығады (конвекция). Дөңгелек пішін желге қарсылықты азайтады.</p>
     </section>
   </aside>
 </div>
@@ -199,13 +324,16 @@ const PARTS = {
   kerege: { name: "Кереге", d: "Тор тәрізді жиналмалы қабырға. Әр бөлігі «қанат» деп аталады, үйдің көлемі қанат санымен өлшенеді." },
   esik: { name: "Есік (сықырлауық)", d: "Ағаш есік. Дәстүр бойынша күн шығысқа немесе оңтүстікке қаратып тігіледі." },
   tuyrlyq: { name: "Туырлық", d: "Керегені сыртынан жабатын киіз. Оюлы басқұр мен баулармен бекітіледі." },
-  uzik: { name: "Үзік", d: "Уықтардың үстін жабатын киіз. Шаңырақ үстіне түндік жабылады." },
+  uzik: { name: "Үзік", d: "Уықтардың үстін жабатын киіз." },
+  tundik: { name: "Түндік", d: "Шаңырақты жабатын киіз. Ашық болса түтін шығып, таза ауа кіреді; жабық болса жылу сақталады. Ақылды жүйеде оны серво ашады." },
   oshaq: { name: "Ошақ", d: "Үйдің ортасы. Жылу мен тамақтың көзі, шаңырақтың дәл астында орналасады." },
-  tor: { name: "Төр", d: "Есікке қарама-қарсы құрметті орын. Мұнда сандық пен жүк жиналады." }
+  tor: { name: "Төр", d: "Есікке қарама-қарсы құрметті орын. Мұнда сандық пен жүк жиналады." },
+  datchik: { name: "Датчик", d: "DHT22 температура мен ылғалдылық датчигі. Ақылды жүйенің «көзі»: әр 2 секунд сайын өлшейді." }
 };
 const state = { kanat: 6, H: 1.5, felt: "on", tags: true, sel: null, tOut: -20, dCm: 3 };
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const TAN = Math.tan(32 * Math.PI / 180);
+const $ = id => document.getElementById(id);
 
 function dims() {
   const R = state.kanat * 3.2 / (2 * Math.PI);
@@ -213,11 +341,14 @@ function dims() {
   const H = state.H;
   const Ht = H + (R - r) * TAN;
   const U = state.kanat * 15;
-  return { R, r, H, Ht, U };
+  const h = Ht - H, slant = Math.hypot(R - r, h);
+  const V = Math.PI * R * R * H + Math.PI * h / 3 * (R * R + R * r + r * r);
+  const S = (2 * Math.PI * R * H - 1.0 * H) + Math.PI * (R + r) * slant;
+  return { R, r, H, Ht, U, h, slant, V, S };
 }
 
 // ---------- three setup ----------
-const view = document.getElementById("view");
+const view = $("view");
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
@@ -226,7 +357,6 @@ renderer.outputEncoding = THREE.sRGBEncoding;
 view.prepend(renderer.domElement);
 
 const scene = new THREE.Scene();
-scene.fog = null;
 const camera = new THREE.PerspectiveCamera(45, 1, 0.05, 200);
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
@@ -250,7 +380,6 @@ scene.add(ground);
 const tex = (w, h, draw) => { const c = document.createElement("canvas"); c.width = w; c.height = h; draw(c.getContext("2d"), w, h);
   const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = 4; return t; };
 
-// felt wall texture with ornament band (қошқар мүйіз style curls)
 const wallTex = tex(512, 256, (g, w, h) => {
   g.fillStyle = "#e6dfcf"; g.fillRect(0, 0, w, h);
   for (let i = 0; i < 2500; i++) { g.fillStyle = `rgba(120,100,70,${Math.random() * 0.06})`; g.fillRect(Math.random() * w, Math.random() * h, 2, 2); }
@@ -290,6 +419,11 @@ const carpetTex = tex(512, 512, (g, w, h) => {
   g.strokeStyle = "#1f3d63"; g.lineWidth = 6;
   for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2; g.beginPath(); g.moveTo(cx + Math.cos(a) * 60, cy + Math.sin(a) * 60); g.lineTo(cx + Math.cos(a) * 110, cy + Math.sin(a) * 110); g.stroke(); }
 });
+const tundikTex = tex(256, 256, (g, w, h) => {
+  g.fillStyle = "#d8cfbb"; g.fillRect(0, 0, w, h);
+  g.strokeStyle = "#7d1f19"; g.lineWidth = 10; g.strokeRect(14, 14, w - 28, h - 28);
+  g.strokeStyle = "#e9c46a"; g.lineWidth = 4; g.strokeRect(30, 30, w - 60, h - 60);
+});
 
 const M = {
   wood: new THREE.MeshStandardMaterial({ color: 0xa8743f, roughness: 0.75 }),
@@ -297,6 +431,7 @@ const M = {
   uyk: new THREE.MeshStandardMaterial({ color: 0xa8321f, roughness: 0.6 }),
   wall: new THREE.MeshStandardMaterial({ map: wallTex, roughness: 1, side: THREE.DoubleSide }),
   roof: new THREE.MeshStandardMaterial({ map: roofTex, roughness: 1, side: THREE.DoubleSide }),
+  tundik: new THREE.MeshStandardMaterial({ map: tundikTex, roughness: 1, side: THREE.DoubleSide }),
   rope: new THREE.MeshStandardMaterial({ color: 0x5b3a20, roughness: 1 }),
   door: new THREE.MeshStandardMaterial({ color: 0xc0622e, roughness: 0.55 }),
   gold: new THREE.MeshStandardMaterial({ color: 0xe0b552, roughness: 0.4, metalness: 0.5 }),
@@ -304,6 +439,8 @@ const M = {
   stone: new THREE.MeshStandardMaterial({ color: 0x77736c, roughness: 1 }),
   fire: new THREE.MeshBasicMaterial({ color: 0xffa040 }),
   chest: new THREE.MeshStandardMaterial({ color: 0x7d1f19, roughness: 0.5 }),
+  plastic: new THREE.MeshStandardMaterial({ color: 0x1f6f8b, roughness: 0.5 }),
+  screen: new THREE.MeshBasicMaterial({ color: 0x55e07a }),
   hi: new THREE.MeshStandardMaterial({ color: 0xffc04d, emissive: 0xb86b00, emissiveIntensity: 0.6, roughness: 0.5 })
 };
 
@@ -311,14 +448,14 @@ const P = (rad, ang, y) => new THREE.Vector3(rad * Math.cos(ang), y, rad * Math.
 const tube = (pts, rad, mat, seg) => { const m = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), seg || 8, rad, 6, false), mat);
   m.castShadow = true; m.receiveShadow = true; return m; };
 
-let yurt = null, G = {}, fireLight = null, fireMesh = null, anchors = {};
+let yurt = null, G = {}, fireLight = null, fireMesh = null, anchors = {}, tundikPivot = null, tundikAngle = 0;
 
 function build() {
   if (yurt) { yurt.traverse(o => { if (o.geometry) o.geometry.dispose(); }); scene.remove(yurt); }
   const { R, r, H, Ht, U } = dims();
   yurt = new THREE.Group(); scene.add(yurt);
   G = {};
-  ["kerege", "esik", "shanyraq", "uyk", "tuyrlyq", "uzik", "interior"].forEach(k => { G[k] = new THREE.Group(); G[k].userData.part = k; yurt.add(G[k]); });
+  ["kerege", "esik", "shanyraq", "uyk", "tuyrlyq", "uzik", "tundik", "interior", "datchik"].forEach(k => { G[k] = new THREE.Group(); G[k].userData.part = k; yurt.add(G[k]); });
 
   // Kerege lattice
   const dh = 0.55 / R, a0 = Math.PI / 2 + dh, a1 = Math.PI / 2 + 2 * Math.PI - dh;
@@ -334,8 +471,8 @@ function build() {
       G.kerege.add(tube(pts, 0.022, M.wood, 6));
     }
   }
-  // Door frame and panels
-  const door = G.esik; door.position.set(0, 0, R); door.userData.part = "esik";
+  // Door
+  const door = G.esik; door.position.set(0, 0, R);
   const dw = 0.5;
   const post = (x) => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.09, H, 0.1), M.woodDark); m.position.set(x, H / 2, 0); m.castShadow = true; door.add(m); };
   post(-dw); post(dw);
@@ -371,32 +508,43 @@ function build() {
     G.uyk.add(tube(prof.map(([rad, y]) => P(rad, ang, y)), 0.028, M.uyk, 12));
   }
 
-  // Felt: туырлық (wall) and үзік (roof)
+  // Felt: туырлық (wall)
   const dhF = 0.56 / (R + 0.05);
   const wall = new THREE.Mesh(new THREE.CylinderGeometry(R + 0.05, R + 0.05, H + 0.1, 96, 1, true, dhF, 2 * Math.PI - 2 * dhF), M.wall);
   wallTex.repeat.set(state.kanat * 2, 1);
   wall.position.y = (H + 0.1) / 2; wall.castShadow = true; wall.receiveShadow = true; G.tuyrlyq.add(wall);
-  // ropes (бау): arc leaves a gap at the door
   [0.3, 0.68].forEach(f => { const holder = new THREE.Group(); holder.rotation.y = -(Math.PI / 2 + dhF); holder.position.y = H * f;
     const rope = new THREE.Mesh(new THREE.TorusGeometry(R + 0.065, 0.015, 6, 96, 2 * Math.PI - 2 * dhF), M.rope);
     rope.rotation.x = Math.PI / 2; holder.add(rope); G.tuyrlyq.add(holder); });
+  // Үзік (roof)
   const lift = 0.13, rb = R + 0.2, rt = r + 0.1, yb = lineY(rb) + lift, yt = lineY(rt) + lift;
   const roof = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, yt - yb, 96, 1, true), M.roof);
   roofTex.repeat.set(state.kanat * 3, 1);
   roof.position.y = (yt + yb) / 2; roof.castShadow = true; roof.receiveShadow = true; G.uzik.add(roof);
+  // Түндік: hinged felt cap over the shanyraq
+  const tr = r + 0.3;
+  tundikPivot = new THREE.Group(); tundikPivot.position.set(tr, Ht + 0.1, 0); G.tundik.add(tundikPivot);
+  const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.04, tr, 0.22, 4, 1, true, Math.PI / 4), M.tundik);
+  cap.position.set(-tr, 0.11, 0); cap.castShadow = true; tundikPivot.add(cap);
 
   // Interior
   const carpet = new THREE.Mesh(new THREE.CircleGeometry(R - 0.08, 64), M.carpet); carpet.rotation.x = -Math.PI / 2; carpet.position.y = 0.01; carpet.receiveShadow = true;
-  carpet.userData.part = "tor"; G.interior.add(carpet);
+  G.interior.add(carpet);
   const oshaq = new THREE.Group(); oshaq.userData.part = "oshaq"; G.interior.add(oshaq);
-  for (let i = 0; i < 11; i++) { const a = i / 11 * Math.PI * 2; const s = new THREE.Mesh(new THREE.DodecahedronGeometry(0.09 + Math.random() * 0.03), M.stone);
-    s.position.set(Math.cos(a) * 0.36, 0.07, Math.sin(a) * 0.36); s.rotation.set(Math.random(), Math.random(), 0); s.castShadow = true; oshaq.add(s); }
+  for (let i = 0; i < 11; i++) { const a = i / 11 * Math.PI * 2; const s = new THREE.Mesh(new THREE.DodecahedronGeometry(0.09 + (i % 3) * 0.012), M.stone);
+    s.position.set(Math.cos(a) * 0.36, 0.07, Math.sin(a) * 0.36); s.rotation.set(i * 0.7, i * 1.3, 0); s.castShadow = true; oshaq.add(s); }
   fireMesh = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.42, 10), M.fire); fireMesh.position.y = 0.23; oshaq.add(fireMesh);
   fireLight = new THREE.PointLight(0xff8a3d, 1.2, R * 2.2, 2); fireLight.position.y = 0.5; oshaq.add(fireLight);
   const tor = new THREE.Group(); tor.userData.part = "tor"; G.interior.add(tor);
   const chest = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.55, 0.55), M.chest); chest.position.set(0, 0.3, -R + 0.55); chest.castShadow = true; tor.add(chest);
   const trim = new THREE.Mesh(new THREE.BoxGeometry(1.34, 0.06, 0.58), M.gold); trim.position.set(0, 0.5, -R + 0.55); tor.add(trim);
   const blankets = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.35, 0.5), M.door); blankets.position.set(0, 0.75, -R + 0.55); blankets.castShadow = true; tor.add(blankets);
+
+  // Sensor box on the kerege, facing the hearth
+  const sAng = Math.PI / 2 - 2.3, sPos = P(R - 0.1, sAng, 1.15);
+  const box = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.22, 0.06), M.plastic); box.position.copy(sPos); box.lookAt(0, 1.15, 0); G.datchik.add(box);
+  const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.07), M.screen); scr.position.set(0, 0.04, 0.031); box.add(scr);
+  const grill = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.06, 0.01), M.woodDark); grill.position.set(0, -0.055, 0.031); box.add(grill);
 
   // label anchors
   const aU = Math.PI / 2 - 0.55;
@@ -407,9 +555,12 @@ function build() {
     esik: new THREE.Vector3(0, H + 0.05, R + 0.1),
     tuyrlyq: P(R + 0.08, Math.PI / 2 - 0.9, H * 0.85),
     uzik: P((R + r) / 2, Math.PI / 2 + 0.95, lineY((R + r) / 2) + 0.15),
+    tundik: new THREE.Vector3(r + 0.35, Ht + 0.2, 0),
     oshaq: new THREE.Vector3(0, 0.55, 0),
-    tor: new THREE.Vector3(0, 1.0, -R + 0.55)
+    tor: new THREE.Vector3(0, 1.0, -R + 0.55),
+    datchik: sPos.clone().add(new THREE.Vector3(0, 0.16, 0))
   };
+  origMat.clear();
   applyFelt(); applyHighlight();
   if (animT >= TOTAL) setAnim(TOTAL);
   calc();
@@ -417,31 +568,30 @@ function build() {
 
 // ---------- felt modes ----------
 function applyFelt() {
-  [M.wall, M.roof, M.rope].forEach(m => {
-    const glass = state.felt === "glass";
-    m.transparent = glass; m.opacity = glass ? 0.28 : 1; m.depthWrite = !glass; m.needsUpdate = true;
-  });
-  ["tuyrlyq", "uzik"].forEach(k => { G[k].userData.on = state.felt !== "off"; G[k].traverse(o => { if (o.isMesh) o.castShadow = state.felt === "on"; }); });
+  const glass = state.felt === "glass";
+  [M.wall, M.roof, M.rope, M.tundik].forEach(m => { m.transparent = glass; m.opacity = glass ? 0.28 : 1; m.depthWrite = !glass; m.needsUpdate = true; });
+  ["tuyrlyq", "uzik", "tundik"].forEach(k => G[k].traverse(o => { if (o.isMesh) o.castShadow = state.felt === "on"; }));
   if (animT >= TOTAL) setAnim(TOTAL);
 }
 
 // ---------- highlight ----------
 const origMat = new Map();
+const HILITE = ["shanyraq", "kuldireuish", "uyk", "kerege", "esik", "oshaq", "tundik", "datchik", "tor"];
 function applyHighlight() {
   yurt.traverse(o => { if (o.isMesh) { if (!origMat.has(o)) origMat.set(o, o.material); else o.material = origMat.get(o); } });
-  if (!state.sel || !["shanyraq", "kuldireuish", "uyk", "kerege", "esik", "oshaq"].includes(state.sel)) return;
-  const root = state.sel === "kuldireuish" ? G.shanyraq.children.find(c => c.userData.part === "kuldireuish")
-    : state.sel === "oshaq" ? G.interior.children.find(c => c.userData.part === "oshaq") : G[state.sel];
-  root && root.traverse(o => { if (o.isMesh && o.material !== M.fire) o.material = M.hi; });
+  if (!state.sel || !HILITE.includes(state.sel)) return;
+  let root = G[state.sel];
+  if (state.sel === "kuldireuish") root = G.shanyraq.children.find(c => c.userData.part === "kuldireuish");
+  if (state.sel === "oshaq" || state.sel === "tor") root = G.interior.children.find(c => c.userData.part === state.sel);
+  root && root.traverse(o => { if (o.isMesh && o.material !== M.fire && o.material !== M.screen) o.material = M.hi; });
 }
 
 // ---------- assembly animation ----------
-const TOTAL = 6.5; let animT = TOTAL, animating = false;
+const TOTAL = 7; let animT = TOTAL, animating = false;
 const ease = x => x <= 0 ? 0 : x >= 1 ? 1 : 1 - Math.pow(1 - x, 3);
 function setAnim(t) {
   const { Ht, U } = dims();
   const k = ease(t / 1.4);
-  G.interior.visible = true;
   G.kerege.scale.y = Math.max(0.001, k); G.kerege.visible = k > 0;
   G.esik.visible = t > 0.6; G.esik.scale.setScalar(Math.max(0.001, ease((t - 0.6) / 0.8)));
   const s = ease((t - 1.4) / 1.4); G.shanyraq.visible = t > 1.4; G.shanyraq.position.y = 0.4 + (Ht - 0.4) * s;
@@ -449,15 +599,18 @@ function setAnim(t) {
   const fOn = state.felt !== "off";
   const w = ease((t - 4.4) / 1.0); G.tuyrlyq.visible = fOn && w > 0; G.tuyrlyq.scale.set(1, Math.max(0.001, w), 1);
   const rf = ease((t - 5.4) / 1.1); G.uzik.visible = fOn && rf > 0; G.uzik.position.y = (1 - rf) * 1.2; G.uzik.scale.setScalar(Math.max(0.001, 0.8 + 0.2 * rf));
+  const td = ease((t - 6.3) / 0.7); G.tundik.visible = fOn && td > 0; G.tundik.position.y = (1 - td) * 1.0;
+  G.datchik.visible = t >= TOTAL - 0.01;
 }
-document.getElementById("assemble").onclick = () => { if (reduce) { setAnim(TOTAL); return; } animT = 0; animating = true; };
+$("assemble").onclick = () => { if (reduce) { setAnim(TOTAL); return; } animT = 0; animating = true; };
 
 // ---------- camera views ----------
 let camTween = null;
+function outPos() { const { R } = dims(), k = Math.max(1, 1.15 / (camera.aspect || 1)); return new THREE.Vector3(R * 2.1 * k, R * 1.25 * k, R * 2.6 * k); }
 function goView(name) {
   const { R, H, Ht } = dims();
   const views = {
-    out: [new THREE.Vector3(R * 2.1, R * 1.25, R * 2.6), new THREE.Vector3(0, H * 0.9, 0)],
+    out: [outPos(), new THREE.Vector3(0, H * 0.9, 0)],
     in: [new THREE.Vector3(0.2, 1.45, R * 0.72), new THREE.Vector3(0, 1.2, -R * 0.4)],
     top: [new THREE.Vector3(0.01, Ht + R * 3.2, 0.6), new THREE.Vector3(0, 0, 0)]
   };
@@ -465,33 +618,34 @@ function goView(name) {
   if (reduce) { camera.position.copy(p); controls.target.copy(t); return; }
   camTween = { p0: camera.position.clone(), t0: controls.target.clone(), p, t, k: 0 };
 }
-vOut.onclick = () => goView("out"); vIn.onclick = () => goView("in"); vTop.onclick = () => goView("top");
+$("vOut").onclick = () => goView("out"); $("vIn").onclick = () => goView("in"); $("vTop").onclick = () => goView("top");
 
 // ---------- labels ----------
-const labelsEl = document.getElementById("labels");
+const labelsEl = $("labels");
 const tagEls = {};
 Object.keys(PARTS).filter(k => k !== "kuldireuish").forEach(k => {
-  const b = document.createElement("button"); b.className = "tag"; b.textContent = PARTS[k].name.split(" ")[0]; b.onclick = () => select(k);
+  const b = document.createElement("button"); b.className = "tag" + (k === "datchik" ? " sensor" : ""); b.textContent = PARTS[k].name.split(" ")[0]; b.onclick = () => select(k);
   labelsEl.appendChild(b); tagEls[k] = b;
 });
 const v3 = new THREE.Vector3();
 function placeLabels() {
-  const w = view.clientWidth, h = view.clientHeight;
+  const w = view.clientWidth, h = view.clientHeight, { R } = dims();
+  const outside = Math.hypot(camera.position.x, camera.position.z) > R;
   for (const k in tagEls) {
     const el = tagEls[k], a = anchors[k];
-    let show = state.tags && a && animT >= TOTAL;
-    if ((k === "tuyrlyq" || k === "uzik") && state.felt === "off") show = false;
-    if ((k === "oshaq" || k === "tor") && state.felt === "on" && Math.hypot(camera.position.x, camera.position.z) > dims().R) show = false;
+    let show = (state.tags || k === "datchik") && a && animT >= TOTAL;
+    if (["tuyrlyq", "uzik", "tundik"].includes(k) && state.felt === "off") show = false;
+    if ((k === "oshaq" || k === "tor") && state.felt === "on" && outside) show = false;
     if (show) { v3.copy(a).project(camera); if (v3.z > 1 || v3.z < -1) show = false; }
     el.hidden = !show; if (!show) continue;
     el.style.transform = `translate(${(v3.x * 0.5 + 0.5) * w}px, ${(-v3.y * 0.5 + 0.5) * h - 6}px) translate(-50%, -100%)`;
     el.classList.toggle("on", state.sel === k);
   }
 }
-tagsChk.onchange = e => { state.tags = e.target.checked; };
+$("tagsChk").onchange = e => { state.tags = e.target.checked; };
 
 // ---------- parts list ----------
-const partsEl = document.getElementById("parts");
+const partsEl = $("parts");
 Object.entries(PARTS).forEach(([k, p]) => {
   const li = document.createElement("li"); const b = document.createElement("button"); b.dataset.k = k;
   b.innerHTML = `<b>${p.name}</b><span>${p.d}</span>`; b.onclick = () => select(k); li.appendChild(b); partsEl.appendChild(li);
@@ -502,44 +656,216 @@ function select(k) {
   applyHighlight();
 }
 
+// ---------- tabs ----------
+const tabs = document.querySelectorAll(".tabs button");
+tabs.forEach(t => t.onclick = () => {
+  tabs.forEach(x => x.setAttribute("aria-selected", x === t));
+  document.querySelectorAll(".pane").forEach(p => p.hidden = p.dataset.pane !== t.dataset.tab);
+  if (t.dataset.tab === "sensor") drawChart();
+});
+
 // ---------- calculations ----------
 const fmt = (x, d = 1) => x.toLocaleString("kk-KZ", { minimumFractionDigits: d, maximumFractionDigits: d });
+const fmtT = x => (x < 0 ? "−" : x > 0 ? "+" : "") + fmt(Math.abs(x), 1) + " °C";
 function calc() {
-  const { R, r, H, Ht, U } = dims();
-  const h = Ht - H, slant = Math.hypot(R - r, h);
-  const floor = Math.PI * R * R;
-  const vol = Math.PI * R * R * H + Math.PI * h / 3 * (R * R + R * r + r * r);
-  const wallA = 2 * Math.PI * R * H - 1.0 * H;
-  const roofA = Math.PI * (R + r) * slant;
-  const S = wallA + roofA;
+  const { R, Ht, U, slant, V, S } = dims();
   const rows = [
     ["Диаметрі", "D = n·3,2 / π", fmt(2 * R, 2) + " м"],
-    ["Еден ауданы", "S = π·R²", fmt(floor) + " м²"],
+    ["Еден ауданы", "S = π·R²", fmt(Math.PI * R * R) + " м²"],
     ["Шаңырақ биіктігі", "h = H + (R − r)·tg 32°", fmt(Ht, 2) + " м"],
-    ["Ішкі көлемі", "V = πR²H + πh(R²+Rr+r²)/3", fmt(vol) + " м³"],
+    ["Ішкі көлемі", "V = πR²H + πh(R²+Rr+r²)/3", fmt(V) + " м³"],
     ["Уық саны", "≈ 15 · қанат", U + " дана"],
     ["Уық ұзындығы", "√((R−r)² + h²) + 0,35", fmt(slant + 0.35, 2) + " м"],
     ["Киіз ауданы", "2πRH + π(R+r)·l", fmt(S) + " м²"]
   ];
-  document.getElementById("calc").innerHTML = rows.map(([k, f, v]) => `<div class="k">${k}<small>${f}</small></div><div class="v">${v}</div>`).join("");
+  $("calc").innerHTML = rows.map(([k, f, v]) => `<div class="k">${k}<small>${f}</small></div><div class="v">${v}</div>`).join("");
   const dT = 18 - state.tOut, d = state.dCm / 100;
   const Q = 0.04 * S * dT / d;
-  const sticks = Q / 1000 * 3600 / 15e6; // kg of wood/hour at ~15 MJ/kg
-  document.getElementById("qOut").textContent = fmt(Q / 1000, 1) + " кВт";
-  document.getElementById("qExplain").textContent = `ΔT = ${dT} °C болғанда киіз арқылы өтетін жылу. Ошақта сағатына шамамен ${fmt(sticks, 1)} кг құрғақ отын (тезек, сексеуіл) жағу керек.`;
-  oKanat.textContent = state.kanat; oH.textContent = fmt(state.H, 2) + " м";
-  oT.textContent = (state.tOut < 0 ? "−" + Math.abs(state.tOut) : (state.tOut > 0 ? "+" : "") + state.tOut) + " °C";
-  oD.textContent = fmt(state.dCm, state.dCm % 1 ? 1 : 0) + " см";
+  const fuel = Q / 1000 * 3600 / 15e6 * 1000;
+  $("qOut").textContent = fmt(Q / 1000, 1) + " кВт";
+  $("qExplain").textContent = `ΔT = ${dT} °C болғанда киіз арқылы өтетін жылу. Ошақта сағатына шамамен ${fmt(fuel, 1)} кг құрғақ отын (тезек, сексеуіл) жағу керек.`;
+  $("oKanat").textContent = state.kanat; $("oH").textContent = fmt(state.H, 2) + " м";
+  const tTxt = (state.tOut < 0 ? "−" + Math.abs(state.tOut) : (state.tOut > 0 ? "+" : "") + state.tOut) + " °C";
+  $("oT").textContent = tTxt; $("oT2").textContent = tTxt;
+  $("tRange").value = state.tOut; $("tRange2").value = state.tOut;
+  $("oD").textContent = fmt(state.dCm, state.dCm % 1 ? 1 : 0) + " см";
 }
 
+// ---------- smart yurt simulation ----------
+const SPEED = 600, C_HEAT = 1.2e6, P_MAX = 6000;
+const sim = {};
+function toutAt(t) { const h = (t / 3600) % 24; return state.tOut + 4 * Math.cos(2 * Math.PI * (h - 15) / 24); }
+function simReset() {
+  Object.assign(sim, { t: 12 * 3600, Tin: toutAt(12 * 3600) + 3, fire: 0, fireOn: false, tundikOpen: false, hist: [], lastSample: -1e9, running: sim.running ?? true, auto: sim.auto ?? true });
+  for (let i = 0; i < 6 * 3600 / 30; i++) simStep(30);
+}
+function simStep(dt) {
+  const { V, S } = dims();
+  const UA = 0.04 * S / (state.dCm / 100);
+  const vent = 1.2 * 1005 * V * (sim.tundikOpen ? 2.0 : 0.4) / 3600;
+  const To = toutAt(sim.t);
+  if (sim.auto) {
+    if (sim.Tin < 18) sim.fireOn = true; else if (sim.Tin > 22) sim.fireOn = false;
+    if (sim.Tin > 24) sim.tundikOpen = true; else if (sim.Tin < 21) sim.tundikOpen = false;
+  }
+  sim.fire += ((sim.fireOn ? 1 : 0) - sim.fire) * Math.min(1, dt / 1200);
+  sim.Tin += dt * (P_MAX * sim.fire - (UA + vent) * (sim.Tin - To)) / C_HEAT;
+  sim.t += dt;
+  if (sim.t - sim.lastSample >= 300) {
+    sim.lastSample = sim.t;
+    sim.hist.push({ t: sim.t, i: sim.Tin, o: To, f: sim.fireOn });
+    while (sim.hist.length && sim.hist[0].t < sim.t - 24 * 3600) sim.hist.shift();
+  }
+}
+const chart = $("chart");
+function cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+function drawChart() {
+  const w = chart.clientWidth, h = chart.clientHeight; if (!w) return;
+  const dpr = Math.min(devicePixelRatio, 2);
+  if (chart.width !== w * dpr || chart.height !== h * dpr) { chart.width = w * dpr; chart.height = h * dpr; }
+  const g = chart.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+  const hist = sim.hist; if (hist.length < 2) return;
+  const col = { fg: cssVar("--fg"), muted: cssVar("--muted"), line: cssVar("--line"), acc: cssVar("--accent"), blue: cssVar("--blue"), ok: cssVar("--ok"), fire: cssVar("--fire") };
+  const padL = 34, padR = 8, padT = 8, padB = 22;
+  const tEnd = sim.t, tStart = Math.max(hist[0].t, tEnd - 24 * 3600), tSpan = Math.max(6 * 3600, tEnd - tStart), t0 = tEnd - tSpan;
+  let lo = Infinity, hi = -Infinity;
+  hist.forEach(p => { lo = Math.min(lo, p.i, p.o); hi = Math.max(hi, p.i, p.o); });
+  lo = Math.floor(Math.min(lo, 16) / 10) * 10; hi = Math.ceil(Math.max(hi, 24) / 10) * 10;
+  const X = t => padL + (t - t0) / tSpan * (w - padL - padR), Y = v => padT + (hi - v) / (hi - lo) * (h - padT - padB);
+  g.font = `11px ${cssVar("--font-body")}`; g.textBaseline = "middle";
+  // grid + y labels
+  g.strokeStyle = col.line; g.lineWidth = 1; g.fillStyle = col.muted; g.textAlign = "right";
+  for (let v = lo; v <= hi; v += 10) { g.beginPath(); g.moveTo(padL, Y(v) + .5); g.lineTo(w - padR, Y(v) + .5); g.stroke(); g.fillText((v < 0 ? "−" + Math.abs(v) : v) + "°", padL - 5, Y(v)); }
+  // comfort band
+  g.fillStyle = col.ok; g.globalAlpha = 0.16; g.fillRect(padL, Y(22), w - padL - padR, Y(18) - Y(22)); g.globalAlpha = 1;
+  // x labels every 3h
+  g.textAlign = "center"; g.textBaseline = "top"; g.fillStyle = col.muted;
+  for (let k = Math.ceil(t0 / 10800) * 10800; k <= tEnd; k += 10800) { const x = X(k); if (x < padL + 12 || x > w - padR - 12) continue;
+    g.fillText(String(Math.floor(k / 3600) % 24).padStart(2, "0") + ":00", x, h - padB + 6); }
+  // fire bar
+  g.fillStyle = col.fire;
+  for (let i = 1; i < hist.length; i++) if (hist[i].f && hist[i].t >= t0) g.fillRect(X(hist[i - 1].t), h - padB - 4, Math.max(1, X(hist[i].t) - X(hist[i - 1].t)), 4);
+  // lines
+  const line = (key, c, dash) => { g.strokeStyle = c; g.lineWidth = 2; g.setLineDash(dash || []); g.beginPath(); let st = false;
+    hist.forEach(p => { if (p.t < t0) return; const x = X(p.t), y = Y(p[key]); st ? g.lineTo(x, y) : (g.moveTo(x, y), st = true); }); g.stroke(); g.setLineDash([]); };
+  line("o", col.blue, [5, 4]); line("i", col.acc);
+  const last = hist[hist.length - 1]; g.fillStyle = col.acc; g.beginPath(); g.arc(X(last.t), Y(last.i), 3.5, 0, Math.PI * 2); g.fill();
+}
+function updateReadout() {
+  const To = toutAt(sim.t);
+  $("sIn").textContent = fmtT(sim.Tin); $("sOut").textContent = fmtT(To);
+  const hh = Math.floor(sim.t / 3600) % 24, mm = Math.floor(sim.t / 60) % 60;
+  $("sClock").textContent = String(hh).padStart(2, "0") + ":" + String(mm).padStart(2, "0");
+  const pills = [];
+  if (sim.Tin < 18) pills.push(['warn', '🔔 Суық! Отын салыңыз']);
+  else if (sim.Tin > 24) pills.push(['warn', 'Тым ыстық']);
+  else pills.push(['ok', 'Жайлы']);
+  pills.push(sim.fireOn ? ['fire', 'Ошақ жанып тұр'] : ['', 'Ошақ сөнген']);
+  pills.push(sim.tundikOpen ? ['vent', 'Түндік ашық'] : ['', 'Түндік жабық']);
+  pills.push(['', 'Режим: ' + (sim.auto ? 'автомат' : 'қолмен')]);
+  $("sStatus").innerHTML = pills.map(([c, t]) => `<span class="pill ${c}">${t}</span>`).join("");
+  $("fireBtn").textContent = sim.fireOn ? "Ошақты сөндіру" : "Ошақты жағу";
+  $("tundikBtn").textContent = sim.tundikOpen ? "Түндікті жабу" : "Түндікті ашу";
+  tagEls.datchik.textContent = "🌡 " + fmt(sim.Tin, 1) + "°C";
+}
+$("modeSeg").onclick = e => { const b = e.target.closest("button"); if (!b) return;
+  $("modeSeg").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b));
+  sim.auto = b.dataset.m === "auto"; $("fireBtn").disabled = $("tundikBtn").disabled = sim.auto; updateReadout(); };
+$("fireBtn").onclick = () => { sim.fireOn = !sim.fireOn; updateReadout(); };
+$("tundikBtn").onclick = () => { sim.tundikOpen = !sim.tundikOpen; updateReadout(); };
+$("pauseBtn").onclick = () => { sim.running = !sim.running; $("pauseBtn").textContent = sim.running ? "⏸ Тоқтату" : "▶ Жалғастыру"; };
+$("resetBtn").onclick = () => { simReset(); updateReadout(); drawChart(); };
+
+// ---------- Arduino code ----------
+const CODE = `// Ақылды киіз үй — Arduino Uno
+#include <DHT.h>
+#include <LiquidCrystal_I2C.h>
+#include <Servo.h>
+
+#define DHTPIN    2      // DHT22 датчигі
+#define DHTTYPE   DHT22
+#define BUZZER    8      // зуммер
+#define SERVO_PIN 9      // түндікті ашатын серво
+
+DHT dht(DHTPIN, DHTTYPE);
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+Servo tundik;
+
+const float T_MIN  = 18.0;  // бұдан суық: отын салу керек
+const float T_OPEN = 24.0;  // бұдан ыстық: түндікті ашу
+const float T_SHUT = 21.0;  // бұдан суық: түндікті жабу
+bool tundikOpen = false;
+
+void setup() {
+  Serial.begin(9600);
+  dht.begin();
+  lcd.init();
+  lcd.backlight();
+  pinMode(BUZZER, OUTPUT);
+  tundik.attach(SERVO_PIN);
+  tundik.write(0);           // түндік жабық
+}
+
+void loop() {
+  float t = dht.readTemperature();
+  float h = dht.readHumidity();
+
+  if (isnan(t) || isnan(h)) {  // датчик қатесі
+    lcd.clear();
+    lcd.print("Datchik qatesi");
+    delay(2000);
+    return;
+  }
+
+  // 1) Экранға шығару (LCD тек латын әріптерін көрсетеді)
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Ishte: ");
+  lcd.print(t, 1);
+  lcd.print(" C");
+  lcd.setCursor(0, 1);
+  lcd.print("Ylgal: ");
+  lcd.print(h, 0);
+  lcd.print(" %");
+
+  // 2) Суық болса — дыбыс белгісі
+  if (t < T_MIN) {
+    tone(BUZZER, 1000, 300);
+  }
+
+  // 3) Түндікті автоматты басқару
+  if (t > T_OPEN && !tundikOpen) {
+    tundik.write(90);
+    tundikOpen = true;
+  } else if (t < T_SHUT && tundikOpen) {
+    tundik.write(0);
+    tundikOpen = false;
+  }
+
+  // 4) Компьютерге жіберу (график үшін)
+  Serial.print(t);
+  Serial.print(",");
+  Serial.println(h);
+
+  delay(2000);
+}`;
+const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+$("code").innerHTML = CODE.split("\n").map(l => { const i = l.indexOf("//"); return i < 0 ? esc(l) : esc(l.slice(0, i)) + '<span class="c">' + esc(l.slice(i)) + "</span>"; }).join("\n");
+$("copyBtn").onclick = () => {
+  const done = () => { $("copyBtn").textContent = "Көшірілді ✓"; setTimeout(() => $("copyBtn").textContent = "Көшіру", 1600); };
+  const fallback = () => { const r = document.createRange(); r.selectNodeContents($("code")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); $("copyBtn").textContent = "Ctrl+C басыңыз"; };
+  try { navigator.clipboard.writeText(CODE).then(done, fallback); } catch (e) { fallback(); }
+};
+
 // ---------- controls wiring ----------
-kanatSeg.onclick = e => { const b = e.target.closest("button"); if (!b) return;
-  kanatSeg.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b)); state.kanat = +b.dataset.k; build(); goView("out"); };
-hRange.oninput = e => { state.H = +e.target.value; build(); };
-feltSeg.onclick = e => { const b = e.target.closest("button"); if (!b) return;
-  feltSeg.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b)); state.felt = b.dataset.f; applyFelt(); };
-tRange.oninput = e => { state.tOut = +e.target.value; calc(); };
-dRange.oninput = e => { state.dCm = +e.target.value; calc(); };
+$("kanatSeg").onclick = e => { const b = e.target.closest("button"); if (!b) return;
+  $("kanatSeg").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b)); state.kanat = +b.dataset.k; build(); goView("out"); };
+$("hRange").oninput = e => { state.H = +e.target.value; build(); };
+$("feltSeg").onclick = e => { const b = e.target.closest("button"); if (!b) return;
+  $("feltSeg").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b)); state.felt = b.dataset.f; applyFelt(); };
+$("tRange").oninput = e => { state.tOut = +e.target.value; calc(); };
+$("tRange2").oninput = e => { state.tOut = +e.target.value; calc(); };
+$("dRange").oninput = e => { state.dCm = +e.target.value; calc(); };
 
 // ---------- resize & loop ----------
 function resize() {
@@ -548,20 +874,29 @@ function resize() {
   const { R } = dims(); const s = sun.shadow.camera; s.left = s.bottom = -R * 2; s.right = s.top = R * 2; s.updateProjectionMatrix();
 }
 new ResizeObserver(resize).observe(view);
+new ResizeObserver(drawChart).observe(chart);
+matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", drawChart);
+new MutationObserver(drawChart).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 
 build();
+simReset();
 const d0 = dims();
-camera.position.set(d0.R * 2.1, d0.R * 1.25, d0.R * 2.6); controls.target.set(0, d0.H * 0.9, 0);
-resize();
+resize(); camera.position.copy(outPos()); controls.target.set(0, d0.H * 0.9, 0); updateReadout(); drawChart();
 
 const clock = new THREE.Clock();
+let uiTimer = 0;
 (function loop() {
   requestAnimationFrame(loop);
   const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
   if (animating) { animT += dt; if (animT >= TOTAL) { animT = TOTAL; animating = false; } setAnim(animT); }
   if (camTween) { camTween.k = Math.min(1, camTween.k + dt / 1.1); const e = ease(camTween.k);
     camera.position.lerpVectors(camTween.p0, camTween.p, e); controls.target.lerpVectors(camTween.t0, camTween.t, e); if (camTween.k >= 1) camTween = null; }
-  if (fireLight && !reduce) { fireLight.intensity = 1.1 + Math.sin(t * 13) * 0.15 + Math.sin(t * 7.3) * 0.1; fireMesh.scale.y = 1 + Math.sin(t * 11) * 0.08; }
+  if (sim.running) { let left = dt * SPEED; while (left > 0) { const st = Math.min(30, left); simStep(st); left -= st; } }
+  uiTimer += dt; if (uiTimer > 0.25) { uiTimer = 0; updateReadout(); if (!document.querySelector('[data-pane="sensor"]').hidden) drawChart(); }
+  // fire and tündik follow the simulation
+  if (fireMesh) { const f = sim.fire; fireMesh.visible = f > 0.05; fireMesh.scale.set(0.5 + 0.5 * f, (0.4 + 0.6 * f) * (reduce ? 1 : 1 + Math.sin(t * 11) * 0.08), 0.5 + 0.5 * f);
+    fireLight.intensity = 1.3 * f * (reduce ? 1 : 1 + Math.sin(t * 13) * 0.12); }
+  if (tundikPivot) { const target = sim.tundikOpen ? -2.45 : 0; tundikAngle += (target - tundikAngle) * Math.min(1, dt * 3); tundikPivot.rotation.z = tundikAngle; }
   controls.update();
   renderer.render(scene, camera);
   placeLabels();

@@ -72,6 +72,13 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font-body); f
 .season .tt { font-family: var(--font-mono); font-size: 12.5px; font-variant-numeric: tabular-nums; }
 .seasonInfo { margin-top: 12px; padding: 12px; border-radius: 10px; background: var(--chip); font-size: 14px; }
 .seasonInfo p { margin: 4px 0 0; }
+.tag.dim { transform: translate(-50%, -50%); background: #1e4fd6; color: #fff; border-color: #163da8; font-family: var(--font-mono); font-weight: 600; cursor: default; }
+.tag.dim::after { display: none; }
+.tag.dim.hot { background: #2b100b; color: #ff9a7a; border-color: #6e2a1c; }
+.tag.dim.big { font-size: 13px; padding: 7px 11px; }
+.ovnote { position: absolute; top: 64px; left: max(12px, env(safe-area-inset-left, 0px)); max-width: min(340px, calc(100% - 24px));
+  background: color-mix(in srgb, var(--panel) 90%, transparent); border: 1px solid var(--line); border-radius: 10px; padding: 8px 11px; font-size: 13px; }
+.ovnote b { color: var(--accent); }
 .viewbar { position: absolute; left: max(12px, env(safe-area-inset-left, 0px)); bottom: 12px; display: flex; gap: 6px; flex-wrap: wrap; }
 .hint { position: absolute; right: max(12px, env(safe-area-inset-right, 0px)); bottom: 14px; font-size: 12px; color: var(--fg);
   background: color-mix(in srgb, var(--panel) 80%, transparent); padding: 4px 8px; border-radius: 6px; }
@@ -188,6 +195,7 @@ pre.code .c { color: var(--muted); }
     <div class="seasonbar" id="seasonBar" role="group" aria-label="Жыл мезгілі">
       <button data-s="qys" aria-pressed="true">Қыс</button><button data-s="koktem">Көктем</button><button data-s="zhaz">Жаз</button><button data-s="kuz">Күз</button>
     </div>
+    <div class="ovnote" id="ovNote" hidden></div>
     <div class="viewbar">
       <button class="btn" id="vOut">Сырттан</button>
       <button class="btn" id="vIn">Ішінен</button>
@@ -657,6 +665,7 @@ function goView(name) {
   const views = {
     out: [outPos(), new THREE.Vector3(0, H * 0.9, 0)],
     in: [new THREE.Vector3(0.2, 1.45, R * 0.72), new THREE.Vector3(0, 1.2, -R * 0.4)],
+    side: [new THREE.Vector3(0, Ht * 0.55, R * 3.3 * Math.max(1, 1.15 / (camera.aspect || 1))), new THREE.Vector3(0, Ht * 0.5, 0)],
     top: [new THREE.Vector3(0.01, Ht + R * 3.2, 0.6), new THREE.Vector3(0, 0, 0)]
   };
   const [p, t] = views[name];
@@ -678,7 +687,7 @@ function placeLabels() {
   const outside = Math.hypot(camera.position.x, camera.position.z) > R;
   for (const k in tagEls) {
     const el = tagEls[k], a = anchors[k];
-    let show = (state.tags || k === "datchik") && a && animT >= TOTAL;
+    let show = (state.tags || k === "datchik") && a && animT >= TOTAL && !ovMode;
     if (["tuyrlyq", "uzik", "tundik"].includes(k) && state.felt === "off") show = false;
     if ((k === "oshaq" || k === "tor") && state.felt === "on" && outside) show = false;
     if (show) { v3.copy(a).project(camera); if (v3.z > 1 || v3.z < -1) show = false; }
@@ -686,6 +695,10 @@ function placeLabels() {
     el.style.transform = `translate(${(v3.x * 0.5 + 0.5) * w}px, ${(-v3.y * 0.5 + 0.5) * h - 6}px) translate(-50%, -100%)`;
     el.classList.toggle("on", state.sel === k);
   }
+  ovLabels.forEach(({ el, pos }) => {
+    v3.copy(pos).project(camera); const vis = v3.z <= 1 && v3.z >= -1; el.hidden = !vis; if (!vis) return;
+    el.style.transform = `translate(${(v3.x * 0.5 + 0.5) * w}px, ${(-v3.y * 0.5 + 0.5) * h}px) translate(-50%, -50%)`;
+  });
 }
 $("tagsChk").onchange = e => { state.tags = e.target.checked; };
 
@@ -707,7 +720,66 @@ tabs.forEach(t => t.onclick = () => {
   tabs.forEach(x => x.setAttribute("aria-selected", x === t));
   document.querySelectorAll(".pane").forEach(p => p.hidden = p.dataset.pane !== t.dataset.tab);
   if (t.dataset.tab === "sensor") drawChart();
+  setOverlay(t.dataset.tab);
 });
+
+// ---------- tab overlays: geometry dimensions / heat flow ----------
+const OV = new THREE.Group(); scene.add(OV);
+let ovMode = null, ovLabels = [];
+const ovLineMat = new THREE.MeshBasicMaterial({ color: 0x1e4fd6, depthTest: false, transparent: true });
+const V2 = (x, y, z = 0) => new THREE.Vector3(x, y, z);
+function seg(a, b) { const l = new THREE.Mesh(new THREE.TubeGeometry(new THREE.LineCurve3(a, b), 1, 0.018, 6, false), ovLineMat); l.renderOrder = 10; OV.add(l); }
+function poly(pts) { const l = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 24, 0.018, 6, false), ovLineMat); l.renderOrder = 10; OV.add(l); }
+function dimLine(a, b, tick) { seg(a, b); const t = tick.clone().multiplyScalar(0.13); seg(a.clone().sub(t), a.clone().add(t)); seg(b.clone().sub(t), b.clone().add(t)); }
+function ovLabel(text, pos, cls) { const el = document.createElement("div"); el.className = "tag dim " + (cls || ""); el.textContent = text; labelsEl.appendChild(el); ovLabels.push({ el, pos }); }
+function arrow(o, dir, len, col) { const a = new THREE.ArrowHelper(dir.clone().normalize(), o, len, col, Math.min(0.22, len * 0.4), 0.12);
+  a.traverse(m => { if (m.material) { m.material.depthTest = false; m.material.transparent = true; } m.renderOrder = 11; }); OV.add(a); }
+function clearOverlay() { OV.children.slice().forEach(o => { OV.remove(o); if (o.isMesh) o.geometry.dispose(); }); ovLabels.forEach(o => o.el.remove()); ovLabels = []; }
+function buildOverlay() {
+  clearOverlay();
+  const note = $("ovNote");
+  if (!ovMode) { note.hidden = true; return; }
+  const d = dims(), { R, r, H, Ht, slant } = d, lineY = rad => H + (R - rad) * TAN;
+  if (ovMode === "geo") {
+    const up = V2(0, 1), side = V2(1, 0);
+    dimLine(V2(-R, 0.04), V2(R, 0.04), up); ovLabel(`D = ${fmt(2 * R, 2)} м`, V2(0, 0.04), "big");
+    dimLine(V2(R + 0.45, 0), V2(R + 0.45, H), side); ovLabel(`H = ${fmt(H, 2)} м`, V2(R + 0.45, H / 2));
+    dimLine(V2(-R - 0.45, 0), V2(-R - 0.45, Ht), side); ovLabel(`h = ${fmt(Ht, 2)} м`, V2(-R - 0.45, Ht / 2));
+    dimLine(V2(-r, Ht + 0.35), V2(r, Ht + 0.35), up); ovLabel(`d = ${fmt(2 * r, 2)} м`, V2(0, Ht + 0.55));
+    seg(V2(0, 0.04), V2(0, Ht + 0.2));
+    seg(V2(R, H), V2(r, Ht)); seg(V2(R, H), V2(r, H));
+    const arc = []; for (let i = 0; i <= 16; i++) { const a = Math.PI - (32 * Math.PI / 180) * i / 16; arc.push(V2(R + 0.7 * Math.cos(a), H + 0.7 * Math.sin(a))); } poly(arc);
+    ovLabel("α = 32°", V2(R - 1.05, H + 0.2));
+    ovLabel(`l = ${fmt(slant, 2)} м`, V2((R + r) / 2 + 0.25, lineY((R + r) / 2) + 0.35));
+    ovLabel(`R = ${fmt(R, 2)} м`, V2(-R / 2, 0.5));
+    note.innerHTML = `<b>Геометрия.</b> Кереге — цилиндр (R, H), шатыр — қиық конус (R, r, h − H). Еңісі: tg α = (h − H) / (R − r).`;
+  }
+  if (ovMode === "heat") {
+    const Q = 0.04 * d.S * (18 - state.tOut) / (state.dCm / 100);
+    const out = Q >= 0, len = Math.min(1.7, 0.3 + Math.abs(Q) / 1000 * 0.3), col = out ? 0xff5a36 : 0x4aa3ff;
+    const nC = Math.cos(32 * Math.PI / 180), nS = Math.sin(32 * Math.PI / 180);
+    for (let i = 0; i < 12; i++) {
+      const a = Math.PI / 2 + (i + 0.5) * 2 * Math.PI / 12;
+      const dir = V2(Math.cos(a), 0, Math.sin(a));
+      if (out) arrow(P(R + 0.1, a, H * 0.5), dir, len, col); else arrow(P(R + 0.1 + len, a, H * 0.5), dir.clone().negate(), len, col);
+      const rm = (R + r) / 2, nrm = V2(nS * Math.cos(a), nC, nS * Math.sin(a));
+      const o = P(rm, a, lineY(rm) + 0.15);
+      if (out) arrow(o, nrm, len * 0.9, col); else arrow(o.clone().addScaledVector(nrm, len * 0.9), nrm.clone().negate(), len * 0.9, col);
+    }
+    arrow(V2(0, 0.7, 0), V2(0, 1, 0), Ht + 0.6, 0xffb347);
+    ovLabel("Конвекция ↑", V2(0, Ht + 1.45, 0), "hot");
+    ovLabel(`Q = ${fmt(Math.abs(Q) / 1000, 1)} кВт`, P(R + len + 0.5, Math.PI / 2 - 0.5, H * 0.5), "hot big");
+    note.innerHTML = out ? `<b>Жылу.</b> Қызыл көрсеткілер — киіз арқылы сыртқа кететін жылу. Сыртта суық болған сайын және киіз жұқарған сайын олар ұзарады.`
+      : `<b>Жылу.</b> Сыртта ыстық: көк көрсеткілер жылудың ішке кіретінін көрсетеді.`;
+  }
+  note.hidden = false;
+}
+function setOverlay(tab) {
+  const m = tab === "geo" ? "geo" : tab === "heat" ? "heat" : null;
+  if (m === ovMode) return;
+  ovMode = m; buildOverlay();
+  if (m === "geo") goView("side"); else if (m === "heat") goView("out");
+}
 
 // ---------- calculations ----------
 const fmt = (x, d = 1) => x.toLocaleString("kk-KZ", { minimumFractionDigits: d, maximumFractionDigits: d });
@@ -734,6 +806,7 @@ function calc() {
   $("oT").textContent = tTxt; $("oT2").textContent = tTxt;
   $("tRange").value = state.tOut; $("tRange2").value = state.tOut;
   $("oD").textContent = fmt(state.dCm, state.dCm % 1 ? 1 : 0) + " см";
+  if (typeof ovMode !== "undefined" && ovMode) buildOverlay();
 }
 
 // ---------- smart yurt simulation ----------

@@ -1,0 +1,572 @@
+<!doctype html>
+<html lang="kk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>*,*::before,*::after{box-sizing:border-box}body{margin:0}[hidden]{display:none!important}</style>
+<title>Киіз үй 3D</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Golos+Text:wght@400;500;600&display=swap">
+<style>
+/* Layout: full-height 3D viewport on the left, scrolling study panel on the right; stacks on phones */
+:root {
+  --bg: #edf0ec;
+  --panel: #fbfcfa;
+  --fg: #1c2330;
+  --muted: #5a6371;
+  --line: #d6dbd4;
+  --accent: #b03a2a;      /* painted uyk red */
+  --wood: #8a5a2e;
+  --blue: #2b5f8e;
+  --sky-top: #8fb9de;
+  --sky-bot: #e6ece4;
+  --chip: #e3e8e1;
+  --font-display: "Unbounded", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Golos Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #10151c; --panel: #161d26; --fg: #e7eaee; --muted: #9aa4b2; --line: #263040;
+    --accent: #e2644e; --wood: #c98d55; --blue: #79a9d8; --sky-top: #0a1324; --sky-bot: #2e3648;
+    --chip: #202936; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #10151c; --panel: #161d26; --fg: #e7eaee; --muted: #9aa4b2; --line: #263040;
+  --accent: #e2644e; --wood: #c98d55; --blue: #79a9d8; --sky-top: #0a1324; --sky-bot: #2e3648;
+  --chip: #202936; color-scheme: dark;
+}
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
+.app { display: grid; grid-template-columns: minmax(0, 1fr) 380px; height: 100%; }
+.view { position: relative; min-width: 0; overflow: hidden;
+  background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-bot) 62%); }
+.view canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.labels { position: absolute; inset: 0; pointer-events: none; }
+.tag { position: absolute; left: 0; top: 0; transform: translate(-50%, -100%); pointer-events: auto;
+  font: 600 12px/1 var(--font-body); color: var(--fg); background: var(--panel); border: 1px solid var(--line);
+  padding: 6px 9px; border-radius: 999px; white-space: nowrap; cursor: pointer; box-shadow: 0 2px 8px rgb(0 0 0 / .15); }
+.tag::after { content: ""; position: absolute; left: 50%; bottom: -6px; width: 1px; height: 6px; background: var(--fg); opacity: .5; }
+.tag:hover, .tag:focus-visible { border-color: var(--accent); outline: none; }
+.tag.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+.viewbar { position: absolute; left: max(12px, env(safe-area-inset-left, 0px)); bottom: 12px; display: flex; gap: 6px; flex-wrap: wrap; }
+.hint { position: absolute; right: max(12px, env(safe-area-inset-right, 0px)); bottom: 14px; font-size: 12px; color: var(--fg);
+  background: color-mix(in srgb, var(--panel) 80%, transparent); padding: 4px 8px; border-radius: 6px; }
+
+.panel { background: var(--panel); border-left: 1px solid var(--line); overflow-y: auto; min-width: 0;
+  padding-block: 22px 32px; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 24px; }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: 26px; line-height: 1.15; margin: 0; letter-spacing: -.01em; text-wrap: balance; }
+h1 span { color: var(--accent); }
+.lede { margin: 6px 0 0; color: var(--muted); }
+h2 { font-family: var(--font-display); font-weight: 500; font-size: 13px; text-transform: uppercase; letter-spacing: .08em;
+  margin: 0 0 10px; color: var(--muted); }
+section { display: flex; flex-direction: column; }
+.ctl { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.ctl label, .ctl .lbl { font-weight: 500; display: flex; justify-content: space-between; gap: 8px; }
+.ctl output { font-variant-numeric: tabular-nums; color: var(--accent); font-weight: 600; }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+.seg { display: flex; gap: 4px; flex-wrap: wrap; }
+.seg button, .btn { font: 500 13px/1 var(--font-body); color: var(--fg); background: var(--chip); border: 1px solid transparent;
+  padding: 8px 11px; border-radius: 8px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--fg); color: var(--panel); }
+.seg button:focus-visible, .btn:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn.primary { background: var(--accent); color: #fff; }
+.view .btn { background: var(--panel); border-color: var(--line); }
+.row { display: flex; gap: 8px; flex-wrap: wrap; }
+.check { display: flex; align-items: center; gap: 8px; font-weight: 500; cursor: pointer; }
+.check input { accent-color: var(--accent); width: 16px; height: 16px; }
+
+.calc { display: grid; grid-template-columns: 1fr auto; border-top: 1px solid var(--line); }
+.calc > div { padding: 9px 0; border-bottom: 1px solid var(--line); min-width: 0; }
+.calc .k { font-weight: 500; }
+.calc .k small { display: block; color: var(--muted); font-weight: 400; font-size: 12px; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+.calc .v { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; padding-left: 12px; }
+.subj { display: inline-block; font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em;
+  padding: 2px 6px; border-radius: 4px; margin-left: 6px; vertical-align: 1px; }
+.subj.math { background: color-mix(in srgb, var(--blue) 18%, transparent); color: var(--blue); }
+.subj.phys { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); }
+.subj.hist { background: color-mix(in srgb, var(--wood) 20%, transparent); color: var(--wood); }
+
+.heat { margin-top: 12px; padding: 12px; border-radius: 10px; background: var(--chip); }
+.heat .big { font-family: var(--font-display); font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.heat p { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
+
+.parts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.parts li button { all: unset; box-sizing: border-box; width: 100%; cursor: pointer; padding: 9px 10px; border-radius: 8px;
+  display: grid; grid-template-columns: 1fr; gap: 2px; }
+.parts li button:hover { background: var(--chip); }
+.parts li button:focus-visible { outline: 2px solid var(--accent); }
+.parts li button.on { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.parts b { font-weight: 600; }
+.parts span { color: var(--muted); font-size: 13.5px; }
+.note { font-size: 12.5px; color: var(--muted); margin: 0; }
+
+@media (max-width: 860px) {
+  html, body { height: auto; }
+  .app { grid-template-columns: 1fr; height: auto; }
+  .view { height: 62vh; min-height: 340px; }
+  .panel { border-left: 0; border-top: 1px solid var(--line); overflow: visible;
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .hint { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="view" id="view">
+    <div class="labels" id="labels"></div>
+    <div class="viewbar">
+      <button class="btn" id="vOut">Сырттан</button>
+      <button class="btn" id="vIn">Ішінен</button>
+      <button class="btn" id="vTop">Жоғарыдан</button>
+    </div>
+    <div class="hint">Айналдыру: тартыңыз · Жақындату: дөңгелек</div>
+  </div>
+
+  <aside class="panel">
+    <header>
+      <h1>Киіз <span>үй</span> 3D</h1>
+      <p class="lede">Қазақтың жиналмалы үйі: құрылысы, геометриясы және жылу физикасы бір модельде.</p>
+    </header>
+
+    <section>
+      <h2>Модельді баптау</h2>
+      <div class="ctl">
+        <span class="lbl">Қанат саны <output id="oKanat">6</output></span>
+        <div class="seg" id="kanatSeg" role="group" aria-label="Қанат саны">
+          <button data-k="4">4</button><button data-k="6" aria-pressed="true">6</button><button data-k="8">8</button><button data-k="10">10</button><button data-k="12">12</button>
+        </div>
+      </div>
+      <div class="ctl">
+        <label for="hRange">Кереге биіктігі <output id="oH">1.50 м</output></label>
+        <input type="range" id="hRange" min="1.2" max="1.8" step="0.05" value="1.5">
+      </div>
+      <div class="ctl">
+        <span class="lbl">Киіз жабу</span>
+        <div class="seg" id="feltSeg" role="group" aria-label="Киіз жабу">
+          <button data-f="on" aria-pressed="true">Жабық</button><button data-f="glass">Мөлдір</button><button data-f="off">Сүйегі ғана</button>
+        </div>
+      </div>
+      <div class="row">
+        <button class="btn primary" id="assemble">▶ Құрастыру</button>
+        <label class="check"><input type="checkbox" id="tagsChk" checked> Атаулар</label>
+      </div>
+    </section>
+
+    <section>
+      <h2>Бөліктері <span class="subj hist">Тарих</span></h2>
+      <ul class="parts" id="parts"></ul>
+    </section>
+
+    <section>
+      <h2>Есептеулер <span class="subj math">Математика</span></h2>
+      <div class="calc" id="calc"></div>
+      <p class="note" style="margin-top:8px">Бір қанат ені ≈ 3,2 м деп алынды. Шатыр еңісі 32°.</p>
+    </section>
+
+    <section>
+      <h2>Неге жылы? <span class="subj phys">Физика</span></h2>
+      <div class="ctl">
+        <label for="tRange">Сыртқы температура <output id="oT">−20 °C</output></label>
+        <input type="range" id="tRange" min="-40" max="10" step="1" value="-20">
+      </div>
+      <div class="ctl">
+        <label for="dRange">Киіз қалыңдығы <output id="oD">3 см</output></label>
+        <input type="range" id="dRange" min="1" max="8" step="0.5" value="3">
+      </div>
+      <div class="heat">
+        <div class="big" id="qOut">—</div>
+        <p id="qExplain"></p>
+      </div>
+      <p class="note" style="margin-top:10px">Формула: Q = λ · S · ΔT / d. Киіздің жылу өткізгіштігі λ ≈ 0,04 Вт/(м·К), бұл кірпіштен (≈0,7) шамамен 17 есе аз. Ішкі температура +18 °C. Жылы ауа көтеріліп, түтін шаңырақтан шығады (конвекция).</p>
+    </section>
+  </aside>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function () {
+const PARTS = {
+  shanyraq: { name: "Шаңырақ", d: "Үйдің төбесіндегі дөңгелек. Түтін шығады, жарық түседі. Әулеттің белгісі, ұрпақтан ұрпаққа беріледі." },
+  kuldireuish: { name: "Күлдіреуіш", d: "Шаңырақтың ішіндегі айқасқан иін ағаштар. Шаңырақты бекітеді." },
+  uyk: { name: "Уық", d: "Керегені шаңыраққа жалғайтын иілген сырықтар. Төменгі ұшы кереге басына байланады." },
+  kerege: { name: "Кереге", d: "Тор тәрізді жиналмалы қабырға. Әр бөлігі «қанат» деп аталады, үйдің көлемі қанат санымен өлшенеді." },
+  esik: { name: "Есік (сықырлауық)", d: "Ағаш есік. Дәстүр бойынша күн шығысқа немесе оңтүстікке қаратып тігіледі." },
+  tuyrlyq: { name: "Туырлық", d: "Керегені сыртынан жабатын киіз. Оюлы басқұр мен баулармен бекітіледі." },
+  uzik: { name: "Үзік", d: "Уықтардың үстін жабатын киіз. Шаңырақ үстіне түндік жабылады." },
+  oshaq: { name: "Ошақ", d: "Үйдің ортасы. Жылу мен тамақтың көзі, шаңырақтың дәл астында орналасады." },
+  tor: { name: "Төр", d: "Есікке қарама-қарсы құрметті орын. Мұнда сандық пен жүк жиналады." }
+};
+const state = { kanat: 6, H: 1.5, felt: "on", tags: true, sel: null, tOut: -20, dCm: 3 };
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const TAN = Math.tan(32 * Math.PI / 180);
+
+function dims() {
+  const R = state.kanat * 3.2 / (2 * Math.PI);
+  const r = 0.3 + 0.12 * R;
+  const H = state.H;
+  const Ht = H + (R - r) * TAN;
+  const U = state.kanat * 15;
+  return { R, r, H, Ht, U };
+}
+
+// ---------- three setup ----------
+const view = document.getElementById("view");
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputEncoding = THREE.sRGBEncoding;
+view.prepend(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.fog = null;
+const camera = new THREE.PerspectiveCamera(45, 1, 0.05, 200);
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.maxPolarAngle = Math.PI * 0.495;
+controls.minDistance = 0.3;
+controls.maxDistance = 40;
+
+scene.add(new THREE.HemisphereLight(0xdfe9f5, 0x6b5a3a, 0.75));
+const sun = new THREE.DirectionalLight(0xfff1dc, 1.0);
+sun.position.set(8, 12, 6);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.bias = -0.0005;
+scene.add(sun);
+
+const ground = new THREE.Mesh(new THREE.CircleGeometry(80, 64), new THREE.MeshStandardMaterial({ color: 0x77804f, roughness: 1 }));
+ground.rotation.x = -Math.PI / 2;
+ground.receiveShadow = true;
+scene.add(ground);
+
+const tex = (w, h, draw) => { const c = document.createElement("canvas"); c.width = w; c.height = h; draw(c.getContext("2d"), w, h);
+  const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = 4; return t; };
+
+// felt wall texture with ornament band (қошқар мүйіз style curls)
+const wallTex = tex(512, 256, (g, w, h) => {
+  g.fillStyle = "#e6dfcf"; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 2500; i++) { g.fillStyle = `rgba(120,100,70,${Math.random() * 0.06})`; g.fillRect(Math.random() * w, Math.random() * h, 2, 2); }
+  const band = (y0, bh) => {
+    g.fillStyle = "#7d1f19"; g.fillRect(0, y0, w, bh);
+    g.strokeStyle = "#e9c46a"; g.lineWidth = 5; g.lineCap = "round";
+    const n = 4, cw = w / n, cy = y0 + bh / 2, s = bh * 0.32;
+    for (let i = 0; i < n; i++) {
+      const cx = i * cw + cw / 2;
+      g.beginPath(); g.moveTo(cx, cy + s); g.lineTo(cx, cy - s * 0.2);
+      g.bezierCurveTo(cx, cy - s * 1.3, cx - s * 1.6, cy - s * 1.3, cx - s * 1.5, cy - s * 0.1);
+      g.bezierCurveTo(cx - s * 1.4, cy + s * 0.7, cx - s * 0.6, cy + s * 0.4, cx - s * 0.8, cy - s * 0.2);
+      g.moveTo(cx, cy - s * 0.2);
+      g.bezierCurveTo(cx, cy - s * 1.3, cx + s * 1.6, cy - s * 1.3, cx + s * 1.5, cy - s * 0.1);
+      g.bezierCurveTo(cx + s * 1.4, cy + s * 0.7, cx + s * 0.6, cy + s * 0.4, cx + s * 0.8, cy - s * 0.2);
+      g.stroke();
+      g.fillStyle = "#e9c46a"; g.beginPath(); g.arc(i * cw, cy, 5, 0, Math.PI * 2); g.fill();
+    }
+    g.fillStyle = "#e9c46a"; g.fillRect(0, y0 + 3, w, 3); g.fillRect(0, y0 + bh - 6, w, 3);
+  };
+  band(10, 70); band(h - 34, 24);
+});
+wallTex.wrapS = THREE.RepeatWrapping;
+const roofTex = tex(256, 256, (g, w, h) => {
+  g.fillStyle = "#ddd5c3"; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 1600; i++) { g.fillStyle = `rgba(110,90,60,${Math.random() * 0.07})`; g.fillRect(Math.random() * w, Math.random() * h, 2, 2); }
+  g.fillStyle = "#7d1f19"; g.fillRect(0, h - 22, w, 22); g.fillStyle = "#e9c46a"; g.fillRect(0, h - 26, w, 4);
+});
+roofTex.wrapS = THREE.RepeatWrapping;
+const carpetTex = tex(512, 512, (g, w, h) => {
+  const cx = w / 2, cy = h / 2;
+  const rings = ["#7d1f19", "#e9c46a", "#1f3d63", "#7d1f19", "#b8462f", "#e9c46a", "#7d1f19"];
+  rings.forEach((c, i) => { g.fillStyle = c; g.beginPath(); g.arc(cx, cy, 256 - i * 30, 0, Math.PI * 2); g.fill(); });
+  g.fillStyle = "#e9c46a";
+  for (let k = 0; k < 24; k++) { const a = k / 24 * Math.PI * 2, x = cx + Math.cos(a) * 220, y = cy + Math.sin(a) * 220;
+    g.save(); g.translate(x, y); g.rotate(a); g.fillRect(-7, -7, 14, 14); g.restore(); }
+  g.strokeStyle = "#1f3d63"; g.lineWidth = 6;
+  for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2; g.beginPath(); g.moveTo(cx + Math.cos(a) * 60, cy + Math.sin(a) * 60); g.lineTo(cx + Math.cos(a) * 110, cy + Math.sin(a) * 110); g.stroke(); }
+});
+
+const M = {
+  wood: new THREE.MeshStandardMaterial({ color: 0xa8743f, roughness: 0.75 }),
+  woodDark: new THREE.MeshStandardMaterial({ color: 0x6e4524, roughness: 0.8 }),
+  uyk: new THREE.MeshStandardMaterial({ color: 0xa8321f, roughness: 0.6 }),
+  wall: new THREE.MeshStandardMaterial({ map: wallTex, roughness: 1, side: THREE.DoubleSide }),
+  roof: new THREE.MeshStandardMaterial({ map: roofTex, roughness: 1, side: THREE.DoubleSide }),
+  rope: new THREE.MeshStandardMaterial({ color: 0x5b3a20, roughness: 1 }),
+  door: new THREE.MeshStandardMaterial({ color: 0xc0622e, roughness: 0.55 }),
+  gold: new THREE.MeshStandardMaterial({ color: 0xe0b552, roughness: 0.4, metalness: 0.5 }),
+  carpet: new THREE.MeshStandardMaterial({ map: carpetTex, roughness: 1 }),
+  stone: new THREE.MeshStandardMaterial({ color: 0x77736c, roughness: 1 }),
+  fire: new THREE.MeshBasicMaterial({ color: 0xffa040 }),
+  chest: new THREE.MeshStandardMaterial({ color: 0x7d1f19, roughness: 0.5 }),
+  hi: new THREE.MeshStandardMaterial({ color: 0xffc04d, emissive: 0xb86b00, emissiveIntensity: 0.6, roughness: 0.5 })
+};
+
+const P = (rad, ang, y) => new THREE.Vector3(rad * Math.cos(ang), y, rad * Math.sin(ang));
+const tube = (pts, rad, mat, seg) => { const m = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), seg || 8, rad, 6, false), mat);
+  m.castShadow = true; m.receiveShadow = true; return m; };
+
+let yurt = null, G = {}, fireLight = null, fireMesh = null, anchors = {};
+
+function build() {
+  if (yurt) { yurt.traverse(o => { if (o.geometry) o.geometry.dispose(); }); scene.remove(yurt); }
+  const { R, r, H, Ht, U } = dims();
+  yurt = new THREE.Group(); scene.add(yurt);
+  G = {};
+  ["kerege", "esik", "shanyraq", "uyk", "tuyrlyq", "uzik", "interior"].forEach(k => { G[k] = new THREE.Group(); G[k].userData.part = k; yurt.add(G[k]); });
+
+  // Kerege lattice
+  const dh = 0.55 / R, a0 = Math.PI / 2 + dh, a1 = Math.PI / 2 + 2 * Math.PI - dh;
+  const heads = state.kanat * 14, step = (a1 - a0) / heads, span = H * 0.95 / R;
+  for (let dir = 0; dir < 2; dir++) {
+    for (let th = a0 - span; th <= a1 + 1e-6; th += step) {
+      const angAt = t => dir ? th + span - span * t : th + span * t;
+      let t0, t1;
+      if (!dir) { t0 = Math.max(0, (a0 - th) / span); t1 = Math.min(1, (a1 - th) / span); }
+      else { t0 = Math.max(0, (th + span - a1) / span); t1 = Math.min(1, (th + span - a0) / span); }
+      if (t1 - t0 < 0.04) continue;
+      const pts = []; for (let i = 0; i <= 6; i++) { const t = t0 + (t1 - t0) * i / 6; pts.push(P(R + (dir ? 0.018 : -0.018), angAt(t), H * t)); }
+      G.kerege.add(tube(pts, 0.022, M.wood, 6));
+    }
+  }
+  // Door frame and panels
+  const door = G.esik; door.position.set(0, 0, R); door.userData.part = "esik";
+  const dw = 0.5;
+  const post = (x) => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.09, H, 0.1), M.woodDark); m.position.set(x, H / 2, 0); m.castShadow = true; door.add(m); };
+  post(-dw); post(dw);
+  const lintel = new THREE.Mesh(new THREE.BoxGeometry(2 * dw + 0.09, 0.1, 0.1), M.woodDark); lintel.position.set(0, H - 0.05, 0); door.add(lintel);
+  const sill = new THREE.Mesh(new THREE.BoxGeometry(2 * dw + 0.09, 0.08, 0.12), M.woodDark); sill.position.set(0, 0.04, 0); door.add(sill);
+  [-1, 1].forEach(s => {
+    const hinge = new THREE.Group(); hinge.position.set(s * (dw - 0.045), 0, 0.02); hinge.rotation.y = s * -0.55; door.add(hinge);
+    const pw = dw - 0.05, ph = H - 0.2;
+    const panel = new THREE.Mesh(new THREE.BoxGeometry(pw, ph, 0.04), M.door); panel.position.set(-s * pw / 2, 0.08 + ph / 2, 0); panel.castShadow = true; hinge.add(panel);
+    const orn = new THREE.Mesh(new THREE.TorusGeometry(pw * 0.26, 0.018, 6, 24), M.gold); orn.position.set(-s * pw / 2, 0.08 + ph * 0.6, 0.03); hinge.add(orn);
+    const orn2 = new THREE.Mesh(new THREE.TorusGeometry(pw * 0.14, 0.015, 6, 20), M.gold); orn2.position.set(-s * pw / 2, 0.08 + ph * 0.25, 0.03); hinge.add(orn2);
+  });
+
+  // Shanyraq
+  const sh = G.shanyraq;
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(r, 0.07, 10, 64), M.woodDark); ring.rotation.x = Math.PI / 2; ring.castShadow = true; sh.add(ring);
+  const ring2 = new THREE.Mesh(new THREE.TorusGeometry(r + 0.1, 0.035, 8, 64), M.wood); ring2.rotation.x = Math.PI / 2; ring2.position.y = -0.03; sh.add(ring2);
+  const kul = new THREE.Group(); kul.userData.part = "kuldireuish"; sh.add(kul);
+  [0, Math.PI / 2].forEach(rot => {
+    [-0.45, 0, 0.45].forEach(f => {
+      const d = f * r, c = Math.sqrt(r * r - d * d), hgt = 0.3 * r;
+      const pts = []; for (let i = 0; i <= 10; i++) { const x = -c + 2 * c * i / 10; pts.push(new THREE.Vector3(x, hgt * (1 - (x / c) ** 2), d)); }
+      const m = tube(pts, 0.03, M.wood, 16); m.rotation.y = rot; kul.add(m);
+    });
+  });
+  sh.position.y = Ht;
+
+  // Uyks
+  const lineY = rad => H + (R - rad) * TAN;
+  for (let j = 0; j < U; j++) {
+    const ang = Math.PI / 2 + (j + 0.5) * 2 * Math.PI / U;
+    const prof = [[R + 0.03, H - 0.38], [R + 0.01, H - 0.05], [R - 0.3, lineY(R - 0.3) + 0.03], [(R + r) / 2, lineY((R + r) / 2) + 0.02], [r + 0.04, Ht]];
+    G.uyk.add(tube(prof.map(([rad, y]) => P(rad, ang, y)), 0.028, M.uyk, 12));
+  }
+
+  // Felt: туырлық (wall) and үзік (roof)
+  const dhF = 0.56 / (R + 0.05);
+  const wall = new THREE.Mesh(new THREE.CylinderGeometry(R + 0.05, R + 0.05, H + 0.1, 96, 1, true, dhF, 2 * Math.PI - 2 * dhF), M.wall);
+  wallTex.repeat.set(state.kanat * 2, 1);
+  wall.position.y = (H + 0.1) / 2; wall.castShadow = true; wall.receiveShadow = true; G.tuyrlyq.add(wall);
+  // ropes (бау): arc leaves a gap at the door
+  [0.3, 0.68].forEach(f => { const holder = new THREE.Group(); holder.rotation.y = -(Math.PI / 2 + dhF); holder.position.y = H * f;
+    const rope = new THREE.Mesh(new THREE.TorusGeometry(R + 0.065, 0.015, 6, 96, 2 * Math.PI - 2 * dhF), M.rope);
+    rope.rotation.x = Math.PI / 2; holder.add(rope); G.tuyrlyq.add(holder); });
+  const lift = 0.13, rb = R + 0.2, rt = r + 0.1, yb = lineY(rb) + lift, yt = lineY(rt) + lift;
+  const roof = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, yt - yb, 96, 1, true), M.roof);
+  roofTex.repeat.set(state.kanat * 3, 1);
+  roof.position.y = (yt + yb) / 2; roof.castShadow = true; roof.receiveShadow = true; G.uzik.add(roof);
+
+  // Interior
+  const carpet = new THREE.Mesh(new THREE.CircleGeometry(R - 0.08, 64), M.carpet); carpet.rotation.x = -Math.PI / 2; carpet.position.y = 0.01; carpet.receiveShadow = true;
+  carpet.userData.part = "tor"; G.interior.add(carpet);
+  const oshaq = new THREE.Group(); oshaq.userData.part = "oshaq"; G.interior.add(oshaq);
+  for (let i = 0; i < 11; i++) { const a = i / 11 * Math.PI * 2; const s = new THREE.Mesh(new THREE.DodecahedronGeometry(0.09 + Math.random() * 0.03), M.stone);
+    s.position.set(Math.cos(a) * 0.36, 0.07, Math.sin(a) * 0.36); s.rotation.set(Math.random(), Math.random(), 0); s.castShadow = true; oshaq.add(s); }
+  fireMesh = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.42, 10), M.fire); fireMesh.position.y = 0.23; oshaq.add(fireMesh);
+  fireLight = new THREE.PointLight(0xff8a3d, 1.2, R * 2.2, 2); fireLight.position.y = 0.5; oshaq.add(fireLight);
+  const tor = new THREE.Group(); tor.userData.part = "tor"; G.interior.add(tor);
+  const chest = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.55, 0.55), M.chest); chest.position.set(0, 0.3, -R + 0.55); chest.castShadow = true; tor.add(chest);
+  const trim = new THREE.Mesh(new THREE.BoxGeometry(1.34, 0.06, 0.58), M.gold); trim.position.set(0, 0.5, -R + 0.55); tor.add(trim);
+  const blankets = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.35, 0.5), M.door); blankets.position.set(0, 0.75, -R + 0.55); blankets.castShadow = true; tor.add(blankets);
+
+  // label anchors
+  const aU = Math.PI / 2 - 0.55;
+  anchors = {
+    shanyraq: new THREE.Vector3(0, Ht + 0.35, 0),
+    uyk: P((R + r) / 2 + 0.1, aU, lineY((R + r) / 2 + 0.1) + 0.12),
+    kerege: P(R + 0.05, Math.PI / 2 + 0.75, H * 0.55),
+    esik: new THREE.Vector3(0, H + 0.05, R + 0.1),
+    tuyrlyq: P(R + 0.08, Math.PI / 2 - 0.9, H * 0.85),
+    uzik: P((R + r) / 2, Math.PI / 2 + 0.95, lineY((R + r) / 2) + 0.15),
+    oshaq: new THREE.Vector3(0, 0.55, 0),
+    tor: new THREE.Vector3(0, 1.0, -R + 0.55)
+  };
+  applyFelt(); applyHighlight();
+  if (animT >= TOTAL) setAnim(TOTAL);
+  calc();
+}
+
+// ---------- felt modes ----------
+function applyFelt() {
+  [M.wall, M.roof, M.rope].forEach(m => {
+    const glass = state.felt === "glass";
+    m.transparent = glass; m.opacity = glass ? 0.28 : 1; m.depthWrite = !glass; m.needsUpdate = true;
+  });
+  ["tuyrlyq", "uzik"].forEach(k => { G[k].userData.on = state.felt !== "off"; G[k].traverse(o => { if (o.isMesh) o.castShadow = state.felt === "on"; }); });
+  if (animT >= TOTAL) setAnim(TOTAL);
+}
+
+// ---------- highlight ----------
+const origMat = new Map();
+function applyHighlight() {
+  yurt.traverse(o => { if (o.isMesh) { if (!origMat.has(o)) origMat.set(o, o.material); else o.material = origMat.get(o); } });
+  if (!state.sel || !["shanyraq", "kuldireuish", "uyk", "kerege", "esik", "oshaq"].includes(state.sel)) return;
+  const root = state.sel === "kuldireuish" ? G.shanyraq.children.find(c => c.userData.part === "kuldireuish")
+    : state.sel === "oshaq" ? G.interior.children.find(c => c.userData.part === "oshaq") : G[state.sel];
+  root && root.traverse(o => { if (o.isMesh && o.material !== M.fire) o.material = M.hi; });
+}
+
+// ---------- assembly animation ----------
+const TOTAL = 6.5; let animT = TOTAL, animating = false;
+const ease = x => x <= 0 ? 0 : x >= 1 ? 1 : 1 - Math.pow(1 - x, 3);
+function setAnim(t) {
+  const { Ht, U } = dims();
+  const k = ease(t / 1.4);
+  G.interior.visible = true;
+  G.kerege.scale.y = Math.max(0.001, k); G.kerege.visible = k > 0;
+  G.esik.visible = t > 0.6; G.esik.scale.setScalar(Math.max(0.001, ease((t - 0.6) / 0.8)));
+  const s = ease((t - 1.4) / 1.4); G.shanyraq.visible = t > 1.4; G.shanyraq.position.y = 0.4 + (Ht - 0.4) * s;
+  const u = ease((t - 2.8) / 1.6); G.uyk.children.forEach((m, i) => { m.visible = i < u * U; });
+  const fOn = state.felt !== "off";
+  const w = ease((t - 4.4) / 1.0); G.tuyrlyq.visible = fOn && w > 0; G.tuyrlyq.scale.set(1, Math.max(0.001, w), 1);
+  const rf = ease((t - 5.4) / 1.1); G.uzik.visible = fOn && rf > 0; G.uzik.position.y = (1 - rf) * 1.2; G.uzik.scale.setScalar(Math.max(0.001, 0.8 + 0.2 * rf));
+}
+document.getElementById("assemble").onclick = () => { if (reduce) { setAnim(TOTAL); return; } animT = 0; animating = true; };
+
+// ---------- camera views ----------
+let camTween = null;
+function goView(name) {
+  const { R, H, Ht } = dims();
+  const views = {
+    out: [new THREE.Vector3(R * 2.1, R * 1.25, R * 2.6), new THREE.Vector3(0, H * 0.9, 0)],
+    in: [new THREE.Vector3(0.2, 1.45, R * 0.72), new THREE.Vector3(0, 1.2, -R * 0.4)],
+    top: [new THREE.Vector3(0.01, Ht + R * 3.2, 0.6), new THREE.Vector3(0, 0, 0)]
+  };
+  const [p, t] = views[name];
+  if (reduce) { camera.position.copy(p); controls.target.copy(t); return; }
+  camTween = { p0: camera.position.clone(), t0: controls.target.clone(), p, t, k: 0 };
+}
+vOut.onclick = () => goView("out"); vIn.onclick = () => goView("in"); vTop.onclick = () => goView("top");
+
+// ---------- labels ----------
+const labelsEl = document.getElementById("labels");
+const tagEls = {};
+Object.keys(PARTS).filter(k => k !== "kuldireuish").forEach(k => {
+  const b = document.createElement("button"); b.className = "tag"; b.textContent = PARTS[k].name.split(" ")[0]; b.onclick = () => select(k);
+  labelsEl.appendChild(b); tagEls[k] = b;
+});
+const v3 = new THREE.Vector3();
+function placeLabels() {
+  const w = view.clientWidth, h = view.clientHeight;
+  for (const k in tagEls) {
+    const el = tagEls[k], a = anchors[k];
+    let show = state.tags && a && animT >= TOTAL;
+    if ((k === "tuyrlyq" || k === "uzik") && state.felt === "off") show = false;
+    if ((k === "oshaq" || k === "tor") && state.felt === "on" && Math.hypot(camera.position.x, camera.position.z) > dims().R) show = false;
+    if (show) { v3.copy(a).project(camera); if (v3.z > 1 || v3.z < -1) show = false; }
+    el.hidden = !show; if (!show) continue;
+    el.style.transform = `translate(${(v3.x * 0.5 + 0.5) * w}px, ${(-v3.y * 0.5 + 0.5) * h - 6}px) translate(-50%, -100%)`;
+    el.classList.toggle("on", state.sel === k);
+  }
+}
+tagsChk.onchange = e => { state.tags = e.target.checked; };
+
+// ---------- parts list ----------
+const partsEl = document.getElementById("parts");
+Object.entries(PARTS).forEach(([k, p]) => {
+  const li = document.createElement("li"); const b = document.createElement("button"); b.dataset.k = k;
+  b.innerHTML = `<b>${p.name}</b><span>${p.d}</span>`; b.onclick = () => select(k); li.appendChild(b); partsEl.appendChild(li);
+});
+function select(k) {
+  state.sel = state.sel === k ? null : k;
+  partsEl.querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.k === state.sel));
+  applyHighlight();
+}
+
+// ---------- calculations ----------
+const fmt = (x, d = 1) => x.toLocaleString("kk-KZ", { minimumFractionDigits: d, maximumFractionDigits: d });
+function calc() {
+  const { R, r, H, Ht, U } = dims();
+  const h = Ht - H, slant = Math.hypot(R - r, h);
+  const floor = Math.PI * R * R;
+  const vol = Math.PI * R * R * H + Math.PI * h / 3 * (R * R + R * r + r * r);
+  const wallA = 2 * Math.PI * R * H - 1.0 * H;
+  const roofA = Math.PI * (R + r) * slant;
+  const S = wallA + roofA;
+  const rows = [
+    ["Диаметрі", "D = n·3,2 / π", fmt(2 * R, 2) + " м"],
+    ["Еден ауданы", "S = π·R²", fmt(floor) + " м²"],
+    ["Шаңырақ биіктігі", "h = H + (R − r)·tg 32°", fmt(Ht, 2) + " м"],
+    ["Ішкі көлемі", "V = πR²H + πh(R²+Rr+r²)/3", fmt(vol) + " м³"],
+    ["Уық саны", "≈ 15 · қанат", U + " дана"],
+    ["Уық ұзындығы", "√((R−r)² + h²) + 0,35", fmt(slant + 0.35, 2) + " м"],
+    ["Киіз ауданы", "2πRH + π(R+r)·l", fmt(S) + " м²"]
+  ];
+  document.getElementById("calc").innerHTML = rows.map(([k, f, v]) => `<div class="k">${k}<small>${f}</small></div><div class="v">${v}</div>`).join("");
+  const dT = 18 - state.tOut, d = state.dCm / 100;
+  const Q = 0.04 * S * dT / d;
+  const sticks = Q / 1000 * 3600 / 15e6; // kg of wood/hour at ~15 MJ/kg
+  document.getElementById("qOut").textContent = fmt(Q / 1000, 1) + " кВт";
+  document.getElementById("qExplain").textContent = `ΔT = ${dT} °C болғанда киіз арқылы өтетін жылу. Ошақта сағатына шамамен ${fmt(sticks, 1)} кг құрғақ отын (тезек, сексеуіл) жағу керек.`;
+  oKanat.textContent = state.kanat; oH.textContent = fmt(state.H, 2) + " м";
+  oT.textContent = (state.tOut < 0 ? "−" + Math.abs(state.tOut) : (state.tOut > 0 ? "+" : "") + state.tOut) + " °C";
+  oD.textContent = fmt(state.dCm, state.dCm % 1 ? 1 : 0) + " см";
+}
+
+// ---------- controls wiring ----------
+kanatSeg.onclick = e => { const b = e.target.closest("button"); if (!b) return;
+  kanatSeg.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b)); state.kanat = +b.dataset.k; build(); goView("out"); };
+hRange.oninput = e => { state.H = +e.target.value; build(); };
+feltSeg.onclick = e => { const b = e.target.closest("button"); if (!b) return;
+  feltSeg.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b)); state.felt = b.dataset.f; applyFelt(); };
+tRange.oninput = e => { state.tOut = +e.target.value; calc(); };
+dRange.oninput = e => { state.dCm = +e.target.value; calc(); };
+
+// ---------- resize & loop ----------
+function resize() {
+  const w = view.clientWidth, h = view.clientHeight; if (!w || !h) return;
+  renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+  const { R } = dims(); const s = sun.shadow.camera; s.left = s.bottom = -R * 2; s.right = s.top = R * 2; s.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(view);
+
+build();
+const d0 = dims();
+camera.position.set(d0.R * 2.1, d0.R * 1.25, d0.R * 2.6); controls.target.set(0, d0.H * 0.9, 0);
+resize();
+
+const clock = new THREE.Clock();
+(function loop() {
+  requestAnimationFrame(loop);
+  const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
+  if (animating) { animT += dt; if (animT >= TOTAL) { animT = TOTAL; animating = false; } setAnim(animT); }
+  if (camTween) { camTween.k = Math.min(1, camTween.k + dt / 1.1); const e = ease(camTween.k);
+    camera.position.lerpVectors(camTween.p0, camTween.p, e); controls.target.lerpVectors(camTween.t0, camTween.t, e); if (camTween.k >= 1) camTween = null; }
+  if (fireLight && !reduce) { fireLight.intensity = 1.1 + Math.sin(t * 13) * 0.15 + Math.sin(t * 7.3) * 0.1; fireMesh.scale.y = 1 + Math.sin(t * 11) * 0.08; }
+  controls.update();
+  renderer.render(scene, camera);
+  placeLabels();
+})();
+})();
+</script>
+</body>
+</html>

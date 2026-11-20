@@ -10,5 +10,12 @@
 - **Жылу (Физика):** Q = λ · S · ΔT / d, киіздің жылу өткізгіштігі λ ≈ 0,04 Вт/(м·К).
 - **Датчик (Информатика):** ішкі температураның тәуліктік симуляциясы, автомат режимі (T < 18 °C — «отын сал», T > 24 °C — түндік ашылады) және Arduino коды (DHT22, LCD 1602, зуммер, SG90 серво).
 
+## Blender моделі
+3D модель Blender-де Python скриптімен жасалған: `blender/kiiz_uy_model.py`.
+- `blender/kiiz_uy_model.blend` — Blender файлы, `blender/kiiz_uy_model.glb` — glTF модель.
+- `kiiz_uy_model.json` — сайт жүктейтін модель (glTF, деректері ішінде), `kiiz_uy_render.png` — Cycles рендері.
+- Объект аттары бөліктермен сәйкес (kerege, uyk_000…uyk_089, shanyraq, tundik_pivot…), сайт оларды жарықтандырып, анимациялайды.
+- Blender-де қайта жасау: Scripting қойындысында `kiiz_uy_model.py` ашып, Run Script басыңыз.
+
 ## Іске қосу
-`index.html` файлын браузерде ашыңыз. Технология: Three.js r128.
+Сайтты GitHub Pages арқылы ашыңыз (Blender моделі файлдан жүктеледі). `index.html`-ді жай ашқанда Three.js-те салынған қарапайым модель көрінеді. Технология: Three.js r128.

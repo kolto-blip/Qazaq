@@ -205,7 +205,7 @@ pre.code .c { color: var(--muted); }
       <button class="btn" id="vIn">Ішінен</button>
       <button class="btn" id="vTop">Жоғарыдан</button>
     </div>
-    <div class="hint">Айналдыру: тартыңыз · Жақындату: дөңгелек</div>
+    <div class="hint" id="hint">Айналдыру: тартыңыз · Жақындату: дөңгелек</div>
   </div>
 
   <aside class="panel">
@@ -312,6 +312,16 @@ pre.code .c { color: var(--muted); }
     <section class="pane" data-pane="parts" hidden>
       <h2>Бөліктері</h2>
       <ul class="parts" id="parts"></ul>
+      <h2 style="margin-top:20px">Blender-дегі модель <span class="subj info">Информатика</span></h2>
+      <p class="note" style="margin-bottom:8px">Киіз үйдің 3D моделі Blender бағдарламасында Python скриптімен (<code>kiiz_uy_model.py</code>) жасалып, glTF форматында сайтқа жүктеледі. Әр объектінің аты бөліктің атымен сәйкес (kerege, uyk_000…uyk_089, shanyraq, tundik…), сондықтан сайт оларды жарықтандырып, анимациялай алады.</p>
+      <ol class="algo">
+        <li>Өлшемдерді формуладан есептеу: R = 6·3,2 / 2π, шаңырақ биіктігі h = H + (R − r)·tg 32°.</li>
+        <li>Керегенің 200-ден астам таяқшасын және 90 уықты қисық бойымен «түтік» етіп салу.</li>
+        <li>Туырлық пен үзікке ою текстурасы үшін UV координаталарын беру.</li>
+        <li>.blend, .glb және сайтқа арналған .json файлдарына экспорттау, Cycles-та рендерлеу.</li>
+      </ol>
+      <figure style="margin:10px 0 0"><img src="kiiz_uy_render.png" alt="Blender Cycles-та рендерленген киіз үй моделі" loading="lazy" style="width:100%;border-radius:10px;border:1px solid var(--line);display:block">
+        <figcaption class="note" style="margin-top:6px">Blender Cycles рендері. Қанат саны 6-дан басқа болса, модель сол өлшемге масштабталады.</figcaption></figure>
     </section>
 
     <!-- HISTORY -->
@@ -357,6 +367,7 @@ pre.code .c { color: var(--muted); }
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
 (function () {
 const PARTS = {
@@ -387,12 +398,12 @@ const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const TAN = Math.tan(32 * Math.PI / 180);
 const $ = id => document.getElementById(id);
 
-function dims() {
-  const R = state.kanat * 3.2 / (2 * Math.PI);
+function dims() { return dimsFor(state.kanat, state.H); }
+function dimsFor(kanat, H) {
+  const R = kanat * 3.2 / (2 * Math.PI);
   const r = 0.3 + 0.12 * R;
-  const H = state.H;
   const Ht = H + (R - r) * TAN;
-  const U = state.kanat * 15;
+  const U = kanat * 15;
   const h = Ht - H, slant = Math.hypot(R - r, h);
   const V = Math.PI * R * R * H + Math.PI * h / 3 * (R * R + R * r + r * r);
   const S = (2 * Math.PI * R * H - 1.0 * H) + Math.PI * (R + r) * slant;
@@ -502,9 +513,13 @@ const tube = (pts, rad, mat, seg) => { const m = new THREE.Mesh(new THREE.TubeGe
 
 let wallMesh = null, rollMesh = null, lowRope = null;
 let yurt = null, G = {}, fireLight = null, fireMesh = null, anchors = {}, tundikPivot = null, tundikAngle = 0;
+// Blender model (6 қанат, H = 1,5 м). Loaded below; until then (or if it fails) the procedural model is used.
+const MODEL = { scene: null, dims: dimsFor(6, 1.5) };
+const nd = () => MODEL.scene ? MODEL.dims : dims();   // native dimensions of the geometry in use
 
 function build() {
-  if (yurt) { yurt.traverse(o => { if (o.geometry) o.geometry.dispose(); }); scene.remove(yurt); }
+  if (yurt) { if (!yurt.userData.fromModel) yurt.traverse(o => { if (o.geometry) o.geometry.dispose(); }); scene.remove(yurt); }
+  if (MODEL.scene) { buildFromModel(); return; }
   const { R, r, H, Ht, U } = dims();
   yurt = new THREE.Group(); scene.add(yurt);
   G = {};
@@ -623,6 +638,54 @@ function build() {
   calc();
 }
 
+// ---------- Blender model ----------
+function buildFromModel() {
+  const D = dims(), N = MODEL.dims, { R, r, H, Ht } = N;
+  const lineY = rad => H + (R - rad) * TAN;
+  yurt = new THREE.Group(); yurt.userData.fromModel = true; scene.add(yurt);
+  G = {};
+  ["kerege", "esik", "shanyraq", "uyk", "tuyrlyq", "uzik", "tundik", "interior", "datchik"].forEach(k => { G[k] = new THREE.Group(); G[k].userData.part = k; yurt.add(G[k]); });
+  G.esik.position.set(0, 0, R); G.shanyraq.position.y = Ht;
+  const kul = new THREE.Group(); kul.userData.part = "kuldireuish"; G.shanyraq.add(kul);
+  const oshaqG = new THREE.Group(); oshaqG.userData.part = "oshaq"; G.interior.add(oshaqG);
+  const torG = new THREE.Group(); torG.userData.part = "tor"; G.interior.add(torG);
+  const TARGET = { kerege: G.kerege, esik: G.esik, shanyraq: G.shanyraq, kuldireuish: kul, uyk: G.uyk, tuyrlyq: G.tuyrlyq, uzik: G.uzik,
+    tundik: G.tundik, oshaq: oshaqG, tor: torG, interior: G.interior, datchik: G.datchik };
+  const MATMAP = { wood: M.wood, wood_dark: M.woodDark, uyk_red: M.uyk, kiiz_wall: M.wall, kiiz_roof: M.roof, kiiz_tundik: M.tundik, rope: M.rope,
+    door: M.door, gold: M.gold, carpet: M.carpet, stone: M.stone, fire: M.fire, chest: M.chest, plastic: M.plastic, screen: M.screen };
+  const src = MODEL.scene.clone(true);
+  src.updateMatrixWorld(true); yurt.updateMatrixWorld(true);
+  src.children.slice().sort((a, b) => a.name < b.name ? -1 : 1).forEach(o => { const t = TARGET[o.name.split("_")[0]]; if (t) t.attach(o); });
+  yurt.traverse(o => { if (o.isMesh) { if (o.material && MATMAP[o.material.name]) o.material = MATMAP[o.material.name]; o.castShadow = true; o.receiveShadow = true; } });
+  wallMesh = yurt.getObjectByName("tuyrlyq_wall"); lowRope = yurt.getObjectByName("tuyrlyq_rope_low");
+  rollMesh = yurt.getObjectByName("tuyrlyq_roll");
+  if (rollMesh) { const holder = new THREE.Group(); G.tuyrlyq.add(holder); holder.attach(rollMesh); }
+  tundikPivot = yurt.getObjectByName("tundik_pivot"); tundikAngle = 0;
+  fireMesh = yurt.getObjectByName("oshaq_fire");
+  fireLight = new THREE.PointLight(0xff8a3d, 1.2, R * 2.2, 2); fireLight.position.y = 0.5; oshaqG.add(fireLight);
+  wallTex.repeat.set(state.kanat * 2, 1); roofTex.repeat.set(state.kanat * 3, 1);
+  // other qanat counts / wall heights: scale the 6-qanat model to the right radius and height
+  yurt.scale.set(D.R / R, D.Ht / Ht, D.R / R);
+  const aU = Math.PI / 2 - 0.55, sPos = P(R - 0.1, Math.PI / 2 - 2.3, 1.15);
+  anchors = {
+    shanyraq: new THREE.Vector3(0, Ht + 0.35, 0),
+    uyk: P((R + r) / 2 + 0.1, aU, lineY((R + r) / 2 + 0.1) + 0.12),
+    kerege: P(R + 0.05, Math.PI / 2 + 0.75, H * 0.55),
+    esik: new THREE.Vector3(0, H + 0.05, R + 0.1),
+    tuyrlyq: P(R + 0.08, Math.PI / 2 - 0.9, H * 0.85),
+    uzik: P((R + r) / 2, Math.PI / 2 + 0.95, lineY((R + r) / 2) + 0.15),
+    tundik: new THREE.Vector3(r + 0.35, Ht + 0.2, 0),
+    oshaq: new THREE.Vector3(0, 0.55, 0),
+    tor: new THREE.Vector3(0, 1.0, -R + 0.55),
+    datchik: sPos.clone().add(new THREE.Vector3(0, 0.16, 0))
+  };
+  for (const k in anchors) anchors[k].multiply(yurt.scale);
+  origMat.clear();
+  applyRoll(); applyFelt(); applyHighlight();
+  if (animT >= TOTAL) setAnim(TOTAL);
+  calc();
+}
+
 // ---------- felt modes ----------
 function applyFelt() {
   const glass = state.felt === "glass";
@@ -647,7 +710,7 @@ function applyHighlight() {
 const TOTAL = 7; let animT = TOTAL, animating = false;
 const ease = x => x <= 0 ? 0 : x >= 1 ? 1 : 1 - Math.pow(1 - x, 3);
 function setAnim(t) {
-  const { Ht, U } = dims();
+  const { Ht, U } = nd();
   const k = ease(t / 1.4);
   G.kerege.scale.y = Math.max(0.001, k); G.kerege.visible = k > 0;
   G.esik.visible = t > 0.6; G.esik.scale.setScalar(Math.max(0.001, ease((t - 0.6) / 0.8)));
@@ -983,7 +1046,7 @@ $("copyBtn").onclick = () => {
 // ---------- seasons ----------
 function applyRoll() {
   if (!wallMesh) return;
-  const { H } = dims(), full = H + 0.1, k = state.rolled ? 0.5 : 1;
+  const { H } = nd(), full = H + 0.1, k = state.rolled ? 0.5 : 1;
   wallMesh.scale.y = k; wallMesh.position.y = full - full * k / 2;
   rollMesh.visible = state.rolled; rollMesh.parent.position.y = full * (1 - k);
   if (lowRope) lowRope.visible = !state.rolled;
@@ -1171,6 +1234,12 @@ build();
 simReset();
 const d0 = dims();
 resize(); camera.position.copy(outPos()); controls.target.set(0, d0.H * 0.9, 0); applySeason("qys");
+if (THREE.GLTFLoader) new THREE.GLTFLoader().load("kiiz_uy_model.json", g => {
+  MODEL.scene = g.scene;
+  [wallTex, roofTex, tundikTex, carpetTex].forEach(t => { t.flipY = false; t.needsUpdate = true; });
+  build(); applyRoll();
+  $("hint").textContent = "Blender моделі · Айналдыру: тартыңыз · Жақындату: дөңгелек";
+}, undefined, () => console.warn("Blender моделі жүктелмеді, Three.js моделі қолданылады"));
 
 const clock = new THREE.Clock();
 let uiTimer = 0;

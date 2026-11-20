@@ -139,6 +139,20 @@ details.settings[open] summary { margin-bottom: 12px; }
 .heat p { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
 
 .parts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.stem { display: grid; grid-template-columns: 34px 1fr; border-top: 1px solid var(--line); }
+.stem > * { padding: 9px 0; border-bottom: 1px solid var(--line); min-width: 0; }
+.stem .L { font-family: var(--font-display); font-weight: 700; font-size: 20px; color: var(--accent); line-height: 1.2; }
+.stem b { display: block; }
+.stem span { font-size: 13.5px; color: var(--muted); }
+.who { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.who > div { background: var(--chip); border-radius: 10px; padding: 11px; min-width: 0; }
+.who b { display: block; font-size: 14px; margin-bottom: 3px; }
+.who span { font-size: 13px; color: var(--muted); }
+.gain { display: flex; flex-direction: column; gap: 8px; }
+.gain > div { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: baseline; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.gain .n { font-family: var(--font-display); font-weight: 700; font-size: 20px; color: var(--ok); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.gain span { font-size: 13.5px; }
+@media (max-width: 420px) { .who { grid-template-columns: 1fr; } }
 .parts li button { all: unset; box-sizing: border-box; width: 100%; cursor: pointer; padding: 9px 10px; border-radius: 8px;
   display: grid; grid-template-columns: 1fr; gap: 2px; }
 .parts li button:hover { background: var(--chip); }
@@ -246,6 +260,7 @@ pre.code .c { color: var(--muted); }
       <button role="tab" data-tab="hist" aria-selected="false">Тарихы</button>
       <button role="tab" data-tab="geo" aria-selected="false">Геометрия</button>
       <button role="tab" data-tab="heat" aria-selected="false">Жылу</button>
+      <button role="tab" data-tab="use" aria-selected="false">Пайдасы</button>
     </nav>
 
     <!-- SENSOR -->
@@ -343,6 +358,44 @@ pre.code .c { color: var(--muted); }
       <h2>Есептеулер <span class="subj math">Математика</span></h2>
       <div class="calc" id="calc"></div>
       <p class="note" style="margin-top:8px">Бір қанат ені ≈ 3,2 м деп алынды. Шатыр еңісі 32°. Кереге — цилиндр, шатыр — қиық конус. Қанат санын «Модельді баптау» бөлімінде өзгертіңіз.</p>
+    </section>
+
+    <!-- USE / BENEFITS -->
+    <section class="pane" data-pane="use" hidden>
+      <h2>Бұл STEM жоба</h2>
+      <div class="stem">
+        <div class="L">S</div><div><b>Science — ғылым</b><span>Киіздің жылу өткізгіштігі, Q = λ·S·ΔT/d, конвекция, жылу балансының моделі.</span></div>
+        <div class="L">T</div><div><b>Technology — технология</b><span>Сайт, Blender-дегі 3D модель, DHT22 датчигі, температура графигі.</span></div>
+        <div class="L">E</div><div><b>Engineering — инженерия</b><span>Киіз үйдің құрылымы, Arduino жүйесі: серво түндікті ашады, зуммер ескертеді.</span></div>
+        <div class="L">M</div><div><b>Mathematics — математика</b><span>πR², цилиндр мен қиық конустың көлемі, tg 32°, кез келген қанат санына формула.</span></div>
+      </div>
+      <p class="note" style="margin-top:8px">Тарих бөлімі жобаны пәнаралық етеді: ғылым ұлттық мұрамен байланысады.</p>
+
+      <h2 style="margin-top:20px">Кімге пайдалы?</h2>
+      <div class="who">
+        <div><b>Оқушыларға</b><span>Мектеп формулаларын нақты өмірлік мысалда көреді, 3D модельмен өзі тәжірибе жасайды.</span></div>
+        <div><b>Мұғалімдерге</b><span>Физика, математика, тарих, информатика сабағында дайын интерактивті көрнекі құрал.</span></div>
+        <div><b>Жайлаудағы отбасыларға</b><span>Датчик суықта ескертеді, отынды артық жақпауға көмектеседі.</span></div>
+        <div><b>Туризм мен этноауылдарға</b><span>Қонақтарға арналған киіз үйлерде температураны автомат түрде бақылау.</span></div>
+        <div><b>Мәдениетке</b><span>Киіз үйдің атаулары мен тарихы жастарға заманауи, қызықты түрде жетеді.</span></div>
+        <div><b>Табиғатқа</b><span>Отын аз жағылса, түтін мен көмірқышқыл газы азаяды, сексеуіл сақталады.</span></div>
+      </div>
+
+      <h2 style="margin-top:20px">Нақты пайда (модель бойынша)</h2>
+      <div class="gain">
+        <div><div class="n">2 есе</div><span>Киізді 3 см-ден 6 см-ге қалыңдатса, жылу шығыны екі есе азаяды (Q ~ 1/d). Сондықтан қыста екі қабат киіз жабылады.</span></div>
+        <div><div class="n">18–22 °C</div><span>Ақылды режим температураны жайлы аралықта ұстайды: суықта «Отын сал!» дейді, ыстықта түндікті ашады. «Датчик» бөлімінде қолмен басқарумен салыстырып көріңіз.</span></div>
+        <div><div class="n">1–2 сағ</div><span>Киіз үйді бір отбасы тез жығып, тігеді. Жеңіл әрі жиналмалы баспана көшуге, туризмге, төтенше жағдайда уақытша тұрғын үй ретінде ыңғайлы.</span></div>
+        <div><div class="n">0 электр</div><span>Киіз үйдің өзі электрсіз жылы әрі желдетіледі: табиғи материал мен дұрыс пішін жұмыс істейді. Датчик жүйесі аз тоқпен жұмыс істейді.</span></div>
+      </div>
+
+      <h2 style="margin-top:20px">Болашақта дамыту</h2>
+      <ul class="list" style="margin:0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;gap:5px">
+        <li><b>Иіс газы (CO) датчигі</b> (MQ-7): ошақтан улануды болдырмау. Бұл ең маңызды қауіпсіздік қадамы.</li>
+        <li><b>Телефонға хабарлама</b>: ESP32 тақтасы Wi-Fi арқылы температураны жібереді.</li>
+        <li><b>Күн панелі</b>: датчик жүйесін жайлауда электрсіз қоректендіру.</li>
+        <li><b>Нақты тәжірибе</b>: киіз бен матаға оралған екі банкадағы судың суыну жылдамдығын өлшеп, графикпен салыстыру.</li>
+      </ul>
     </section>
 
     <!-- HEAT -->

@@ -336,7 +336,7 @@ pre.code .c { color: var(--muted); }
         <li>Туырлық пен үзікке ою текстурасы үшін UV координаталарын беру.</li>
         <li>.blend, .glb және сайтқа арналған .json файлдарына экспорттау, Cycles-та рендерлеу.</li>
       </ol>
-      <figure style="margin:10px 0 0"><img src="kiiz_uy_render.png" alt="Blender Cycles-та рендерленген киіз үй моделі" loading="lazy" style="width:100%;border-radius:10px;border:1px solid var(--line);display:block">
+      <figure style="margin:10px 0 0"><img src="kiiz_uy_render.png?v=3" alt="Blender Cycles-та рендерленген киіз үй моделі" loading="lazy" style="width:100%;border-radius:10px;border:1px solid var(--line);display:block">
         <figcaption class="note" style="margin-top:6px">Blender Cycles рендері. Қанат саны 6-дан басқа болса, модель сол өлшемге масштабталады.</figcaption></figure>
     </section>
 
@@ -609,6 +609,7 @@ const tube = (pts, rad, mat, seg) => { const m = new THREE.Mesh(new THREE.TubeGe
 let wallMesh = null, rollMesh = null, lowRope = null;
 let yurt = null, G = {}, fireLight = null, fireMesh = null, anchors = {}, tundikPivot = null, tundikAngle = 0;
 // Blender model (6 қанат, H = 1,5 м). Loaded below; until then (or if it fails) the procedural model is used.
+const MODEL_VERSION = "3";   // increase after re-exporting the model so browsers fetch the new file
 const MODEL = { scene: null, dims: dimsFor(6, 1.5) };
 const nd = () => MODEL.scene ? MODEL.dims : dims();   // native dimensions of the geometry in use
 
@@ -1337,7 +1338,7 @@ build();
 simReset();
 const d0 = dims();
 resize(); camera.position.copy(outPos()); controls.target.set(0, d0.H * 0.9, 0); applySeason("qys");
-if (THREE.GLTFLoader) new THREE.GLTFLoader().load("kiiz_uy_model.json", g => {
+if (THREE.GLTFLoader) new THREE.GLTFLoader().load("kiiz_uy_model.json?v=" + MODEL_VERSION, g => {
   MODEL.scene = g.scene;
   [wallTex, roofTex, tundikTex, carpetTex].forEach(t => { t.flipY = false; t.needsUpdate = true; });
   build(); applyRoll();

@@ -70,6 +70,23 @@ MAT = {
     "chest": material("chest", (0.45, 0.07, 0.05), 0, 0.45),
     "plastic": material("plastic", (0.08, 0.36, 0.48), 0, 0.45),
     "screen": material("screen", (0.2, 0.9, 0.4), 0, 0.3, emission=(0.2, 0.9, 0.4)),
+    "baskur": material("baskur", (0.55, 0.08, 0.06), 0, 0.9),
+    "tuskiiz": material("tuskiiz", (0.25, 0.05, 0.08), 0, 0.9),
+    "sirmaq": material("sirmaq", (0.55, 0.10, 0.06), 0, 1),
+    "juk_red": material("juk_red", (0.62, 0.10, 0.08), 0, 0.9),
+    "juk_blue": material("juk_blue", (0.10, 0.22, 0.50), 0, 0.9),
+    "juk_green": material("juk_green", (0.12, 0.40, 0.22), 0, 0.9),
+    "juk_yellow": material("juk_yellow", (0.85, 0.62, 0.12), 0, 0.9),
+    "juk_white": material("juk_white", (0.88, 0.86, 0.80), 0, 0.9),
+    "qazan": material("qazan", (0.07, 0.07, 0.07), 0.7, 0.5),
+    "dht": material("dht", (0.92, 0.92, 0.90), 0, 0.5),
+    "pcb": material("pcb", (0.02, 0.33, 0.55), 0.1, 0.5),
+    "chip": material("chip", (0.03, 0.03, 0.03), 0.2, 0.4),
+    "metal": material("metal", (0.75, 0.75, 0.78), 0.9, 0.3),
+    "lcd": material("lcd", (0.10, 0.30, 0.85), 0, 0.3, emission=(0.10, 0.30, 0.85)),
+    "servo": material("servo", (0.05, 0.25, 0.70), 0, 0.5),
+    "wire_red": material("wire_red", (0.75, 0.05, 0.05), 0, 0.6),
+    "wire_black": material("wire_black", (0.02, 0.02, 0.02), 0, 0.6),
 }
 
 
@@ -280,6 +297,25 @@ for i in range(seg):
     rf.append((a, a + 2, a + 3, a + 1))
 make_obj("uzik_roof", rv, rf, "kiiz_roof", uvs=ruv)
 
+# үзік баулары: шаңырақтан етекке дейін сыртынан тартылған 8 бау
+for k in range(8):
+    a = math.pi / 2 + math.pi / 8 + k * math.pi / 4
+    pts = [P(rad, a, line_y(rad) + lift + 0.02) for rad in [rt + 0.05 + (rb - rt - 0.1) * i / 10 for i in range(11)]]
+    tube(f"uzik_rope_{k}", pts, 0.016, "rope")
+
+# БАСҚҰР: керегенің жоғарғы жағын іштен айнала байлайтын оюлы белдеу
+bv, bf, buv = [], [], []
+n = 120
+for i in range(n + 1):
+    a = a0 + 0.02 + (a1 - a0 - 0.04) * i / n
+    for k, zz in enumerate((H - 0.30, H - 0.08)):
+        bv.append(P(R - 0.045, a, zz))
+        buv.append((i / n, k))
+for i in range(n):
+    q = i * 2
+    bf.append((q, q + 2, q + 3, q + 1))
+make_obj("baskur_band", bv, bf, "baskur", uvs=buv)
+
 # ---------- ТҮНДІК (топсамен ашылады) ----------
 tr = r + 0.3
 pivot = empty("tundik_pivot", (tr, 0, HT + 0.1))
@@ -325,22 +361,113 @@ fire = bpy.context.active_object
 fire.name = "oshaq_fire"
 fire.data.materials.append(MAT["fire"])
 
+# ошақ үстіндегі үш аяқ және қазан
+bv, bf = [], []
+seg_q, rows = 32, 9
+for i in range(rows):
+    t = i / (rows - 1) * math.pi / 2
+    rr, zz = 0.30 * math.sin(t) + 0.0001, 0.76 - 0.27 * math.cos(t)
+    for k in range(seg_q):
+        a = 2 * math.pi * k / seg_q
+        bv.append(Vector((rr * math.cos(a), rr * math.sin(a), zz)))
+for i in range(rows - 1):
+    for k in range(seg_q):
+        a, b = i * seg_q + k, i * seg_q + (k + 1) % seg_q
+        bf.append((a, b, b + seg_q, a + seg_q))
+make_obj("oshaq_qazan", bv, bf, "qazan")
+torus("oshaq_qazan_rim", 0.305, 0.018, (0, 0, 0.76), "qazan", seg=32)
+tv, tf = [], []
+v, f = tube_data([Vector((0.34 * math.cos(2 * math.pi * k / 40), 0.34 * math.sin(2 * math.pi * k / 40), 0.6)) for k in range(41)], 0.015, 6)
+tv += v; tf += f
+for k in range(3):
+    a = 2 * math.pi * k / 3 + 0.3
+    v, f = tube_data([Vector((0.34 * math.cos(a), 0.34 * math.sin(a), 0.6)), Vector((0.44 * math.cos(a), 0.44 * math.sin(a), 0.0))], 0.016, 6, base=len(tv))
+    tv += v; tf += f
+make_obj("oshaq_tripod", tv, tf, "qazan")
+
 cube("tor_chest", (1.3, 0.55, 0.55), (0, R - 0.55, 0.3), "chest")
 cube("tor_trim", (1.34, 0.58, 0.06), (0, R - 0.55, 0.5), "gold")
-cube("tor_blankets", (1.2, 0.5, 0.35), (0, R - 0.55, 0.75), "door")
+# жүк: сандық үстіне үйілген көрпелер мен жастықтар
+z = 0.53
+for i, (m, w) in enumerate([("juk_red", 1.20), ("juk_blue", 1.16), ("juk_yellow", 1.22), ("juk_green", 1.14), ("juk_red", 1.18), ("juk_white", 1.10)]):
+    cube(f"tor_juk_{i}", (w, 0.48 - 0.01 * (i % 2), 0.075), (0.01 * ((i % 3) - 1), R - 0.55, z + 0.0375), m)
+    z += 0.075
+for k, x in enumerate((-0.27, 0.27)):
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=16, ring_count=8, radius=1, location=(x, R - 0.58, z + 0.08))
+    pil = bpy.context.active_object
+    pil.name = f"tor_pillow_{k}"
+    pil.scale = (0.27, 0.19, 0.09)
+    pil.data.materials.append(MAT["juk_white"])
+    bpy.ops.object.shade_smooth()
+
+# тұскиіз: төрдегі кереге бетіне ілінген кестелі кілем
+tv, tf, tuv = [], [], []
+n = 24
+for i in range(n + 1):
+    a = 3 * math.pi / 2 - 0.42 + 0.84 * i / n
+    for k, zz in enumerate((0.62, 1.18)):
+        tv.append(P(R - 0.07, a, zz))
+        tuv.append((i / n, k))
+for i in range(n):
+    q = i * 2
+    tf.append((q, q + 2, q + 3, q + 1))
+make_obj("tor_tuskiiz", tv, tf, "tuskiiz", uvs=tuv)
+
+# сырмақ: төрдің алдындағы оюлы киіз төсеніш
+bpy.ops.mesh.primitive_plane_add(size=1, location=(0, R - 1.75, 0.018))
+sm = bpy.context.active_object
+sm.name = "interior_sirmaq"
+sm.scale = (1.8, 1.05, 1)
+sm.data.materials.append(MAT["sirmaq"])
 
 # ---------- ДАТЧИК (кереге үстінде, ошаққа қарап тұр) ----------
 s_ang = math.pi / 2 - 2.3
 spos = P(R - 0.1, s_ang, 1.15)
-box = cube("datchik_box", (0.16, 0.06, 0.22), tuple(spos), "plastic", rot=(0, 0, math.pi / 2 - s_ang))
-bpy.ops.mesh.primitive_plane_add(size=1, location=(0, 0.52, 0.18), rotation=(-math.pi / 2, 0, 0))
-scr = bpy.context.active_object
-scr.name = "datchik_screen"
-scr.scale = (0.75, 0.32, 1)
-scr.data.materials.append(MAT["screen"])
-scr.parent = box
-scr.location = (0, 0.52, 0.18)
-cube("datchik_grill", (0.62, 0.17, 0.27), (0, 0.5, -0.25), "wood_dark", parent=box)
+box = cube("datchik_box", (0.10, 0.05, 0.16), tuple(spos), "dht", rot=(0, 0, math.pi / 2 - s_ang))
+for gi in range(4):                                            # DHT22 торлы беті
+    cube(f"datchik_grill_{gi}", (0.8, 0.12, 0.08), (0, 0.5, 0.3 - gi * 0.2), "chip", parent=box)
+
+
+# ---------- ARDUINO ЖҮЙЕСІ: Uno, LCD 1602, зуммер, SG90 серво, сымдар ----------
+def on_wall(name, size, ang, z, mat, depth_off=0.13):
+    return cube(name, size, tuple(P(R - depth_off, ang, z)), mat, rot=(0, 0, math.pi / 2 - ang))
+
+
+ub = s_ang + 0.13
+on_wall("arduino_uno", (0.27, 0.025, 0.2), ub, 0.82, "pcb")
+on_wall("arduino_chip", (0.12, 0.02, 0.03), ub, 0.80, "chip", 0.145)
+on_wall("arduino_usb", (0.05, 0.03, 0.04), ub + 0.035, 0.90, "metal", 0.145)
+on_wall("arduino_header", (0.2, 0.02, 0.015), ub, 0.715, "chip", 0.145)
+lb = s_ang - 0.15
+on_wall("arduino_lcd", (0.22, 0.03, 0.09), lb, 1.14, "pcb")
+on_wall("arduino_lcd_frame", (0.18, 0.031, 0.055), lb, 1.14, "chip", 0.133)
+lp = P(R - 0.155, lb, 1.14)
+bpy.ops.mesh.primitive_plane_add(size=1, location=tuple(lp), rotation=(math.pi / 2, 0, math.pi / 2 - lb + math.pi))
+lcd = bpy.context.active_object
+lcd.name = "arduino_lcd_screen"
+lcd.scale = (0.16, 0.042, 1)
+lcd.data.materials.append(MAT["lcd"])
+bpy.ops.mesh.primitive_cylinder_add(vertices=16, radius=0.028, depth=0.03, location=tuple(P(R - 0.14, ub + 0.11, 1.0)), rotation=(math.pi / 2, 0, math.pi / 2 - (ub + 0.11)))
+bz = bpy.context.active_object
+bz.name = "arduino_buzzer"
+bz.data.materials.append(MAT["chip"])
+# SG90 серво шаңырақтың астында, түндік топсасының жанында
+cube("arduino_servo", (0.075, 0.035, 0.07), (r + 0.06, 0, HT - 0.13), "servo")
+cube("arduino_servo_horn", (0.09, 0.012, 0.01), (r + 0.09, 0, HT - 0.09), "juk_white")
+# сымдар: датчик -> Uno -> LCD, Uno -> кереге басымен -> уық бойымен -> серво
+for wi, (mat, off) in enumerate((("wire_red", 0.0), ("wire_black", 0.014))):
+    rr = R - 0.12 - off
+    path = [P(rr, ub, 0.93), P(rr, ub, H - 0.1)]
+    a_end = 2 * math.pi - 2 * math.pi            # уық 0 бұрышта (j = 67) жатыр
+    for i in range(1, 13):
+        path.append(P(rr, ub + (a_end - ub) * i / 12, H - 0.1))
+    for i in range(1, 11):
+        rad = R - 0.25 - (R - 0.25 - (r + 0.12)) * i / 10
+        path.append(P(rad, off * 0.6, line_y(rad) - 0.07))
+    path.append(Vector((r + 0.08, off * 0.6, HT - 0.12)))
+    tube(f"arduino_wire_{wi}", path, 0.007, mat)
+    tube(f"arduino_wire_s{wi}", catmull([P(rr, ub, 0.9), P(rr - 0.01, (ub + s_ang) / 2, 1.0), P(R - 0.12 - off, s_ang, 1.07)], 10), 0.006, mat)
+    tube(f"arduino_wire_l{wi}", catmull([P(rr, ub, 0.92), P(rr - 0.01, (ub + lb) / 2, 1.05), P(R - 0.12 - off, lb, 1.09)], 10), 0.006, mat)
 
 # ---------- жер, жарық, камера (тек Blender рендері үшін) ----------
 bpy.ops.mesh.primitive_circle_add(vertices=64, radius=14, fill_type="NGON", location=(0, 0, -0.005))
